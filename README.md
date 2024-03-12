@@ -5,9 +5,8 @@
 c# 相机库，含海康、大恒品牌2D相机的常用功能。
 底层采用回调+信号量模式封装 ，最大程度减小线程资源，提高采图效率。
 
-
-开源地址：[https://gitee.com/laomaogu/mgcamctrl](https://gitee.com/laomaogu/mgcamctrl)
-==功能持续完善中。。。==
+ 
+ 功能持续完善中 
 
  ### 工厂模式创建实例
 
