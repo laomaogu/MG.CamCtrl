@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34622.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MG.CamCtrl", "MG.CamCtrl.csproj", "{44751C01-A4FE-421D-AB57-87C3CCF744E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Debug|x64.ActiveCfg = Debug|x64
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Debug|x64.Build.0 = Debug|x64
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Release|x64.ActiveCfg = Release|x64
+		{44751C01-A4FE-421D-AB57-87C3CCF744E3}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7243D6A2-5280-470C-8D89-D3EB68B3602A}
+	EndGlobalSection
+EndGlobal
