@@ -1,4 +1,4 @@
-﻿@[TOC](C#  MG.CamCtrl 相机库（开源） 海康 大恒)
+# C#  MG.CamCtrl 相机库（开源） 海康 大恒
 
 ## 介绍
 
