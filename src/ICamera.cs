@@ -1,6 +1,4 @@
-﻿using MG.CamCtrl.Common.Enum;
-using MG.CamCtrl.Common.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MG.CamCtrl.Common.Enum
+namespace MG.CamCtrl
 {
     public enum IOLines
     {

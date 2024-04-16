@@ -1,4 +1,4 @@
-﻿namespace MG.CamCtrl.Common.Enum
+﻿namespace MG.CamCtrl
 {
     public enum CameraBrand
     {

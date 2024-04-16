@@ -1,7 +1,6 @@
 #define MVCAMERA
 
 using MG.CamCtrl.Cameralibs.HKCamera;
-using MG.CamCtrl.Common.Enum;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

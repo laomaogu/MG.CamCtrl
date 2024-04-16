@@ -1,5 +1,4 @@
-﻿using MG.CamCtrl.Common.Enum;
-using MG.CamCtrl.Mode;
+﻿using MG.CamCtrl.Mode;
 using System.Collections.Generic;
 
 namespace MG.CamCtrl

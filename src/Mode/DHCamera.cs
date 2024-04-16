@@ -1,6 +1,5 @@
 using GxIAPINET;
 using MG.CamCtrl.Cameralibs.DHCmera;
-using MG.CamCtrl.Common.Enum;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

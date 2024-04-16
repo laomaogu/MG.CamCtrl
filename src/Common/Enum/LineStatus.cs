@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MG.CamCtrl.Common.Enum
+namespace MG.CamCtrl
 {
-    public enum TriggerPolarity
+   public enum LineStatus
     {
-        RisingEdge,
-        FallingEdge 
+        Hight,
+        Low
     }
 }
 

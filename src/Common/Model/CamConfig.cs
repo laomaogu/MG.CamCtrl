@@ -1,6 +1,4 @@
-﻿using MG.CamCtrl.Common.Enum;
-
-namespace MG.CamCtrl.Common.Model
+﻿namespace MG.CamCtrl
 {
     public class CamConfig
     {
