@@ -14,4 +14,4 @@ c# 相机库，含海康、大恒品牌2D相机的常用功能。
  目标平台设置： x64
 
 
-使用说明：[http://t.csdnimg.cn/u9d6J](http://http://t.csdnimg.cn/u9d6J)
+使用说明：[https://blog.csdn.net/qq_42239488/article/details/136568127](http://https://blog.csdn.net/qq_42239488/article/details/136568127)
