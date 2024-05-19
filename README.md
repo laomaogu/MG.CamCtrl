@@ -8,15 +8,13 @@ c# 相机库，含海康、大恒品牌2D相机的常用功能。
  
   **功能持续完善中** 
 
-------
-
 ![输入图片说明](Sample/picture.png)
-
-------
-
-····# code block
-····print '3 backticks or' 
+ 
+ #### 注意事项 
  目标平台设置： x64
 
 
 使用说明：http://t.csdnimg.cn/24dkg
+
+
+## 哥哥们，走前点个  :tw-2b50:  可以么
