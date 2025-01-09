@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace MG.CamCtrl.Cameralibs.DHCmera
 {
@@ -45,7 +44,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
         {
             m_dStopTime = Stopwatch.GetTimestamp();
             double dTimeElapsed = (m_dStopTime - m_dStartTime) * 1000.0;
-          
+
             return dTimeElapsed / Stopwatch.Frequency;
         }
     }

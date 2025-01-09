@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace MG.CamCtrl.Cameralibs.DHCmera
 {
-   public class CFps
+    public class CFps
     {
-        UInt64                m_nFrameCount            = 0;                           ///< 从上次计算完毕开始累积的帧数
-        double                m_dBeginTime             = 0.0;                         ///< 第一帧之前的一帧的时间（初始为0）
-        double                m_dEndTime               = 0.0;                         ///< 最后一帧的时间
-        double                m_dFps                   = 0.0;                         ///< 通过帧数与时间间隔之比得出的帧率(帧/秒)
-        double                m_dCurrentFps            = 0.0;                         ///< 当前的帧率，可能是预测得到的（帧/秒）
-        UInt64                m_nTotalFrameCount       = 0;                           ///< 累积的帧数
-        CStopWatch            m_objTime                = new CStopWatch();            ///< 计时器
-        object                m_objLock                = new object();
+        UInt64 m_nFrameCount = 0;                           ///< 从上次计算完毕开始累积的帧数
+        double m_dBeginTime = 0.0;                         ///< 第一帧之前的一帧的时间（初始为0）
+        double m_dEndTime = 0.0;                         ///< 最后一帧的时间
+        double m_dFps = 0.0;                         ///< 通过帧数与时间间隔之比得出的帧率(帧/秒)
+        double m_dCurrentFps = 0.0;                         ///< 当前的帧率，可能是预测得到的（帧/秒）
+        UInt64 m_nTotalFrameCount = 0;                           ///< 累积的帧数
+        CStopWatch m_objTime = new CStopWatch();            ///< 计时器
+        object m_objLock = new object();
 
         /// <summary>
         /// 构造函数

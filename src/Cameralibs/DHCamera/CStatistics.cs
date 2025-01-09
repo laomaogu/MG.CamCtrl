@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace MG.CamCtrl.Cameralibs.DHCmera
 {
     public class CStatistics
     {
         double m_dSumTime = 0.0;      ///< 总时间
-        double m_dMax     = 0.0;      ///< 最大值
-        double m_dMin     = 0.0;      ///< 最小值
-        Int64  m_nNum     = 0;        ///< 统计次数计数
+        double m_dMax = 0.0;      ///< 最大值
+        double m_dMin = 0.0;      ///< 最小值
+        Int64 m_nNum = 0;        ///< 统计次数计数
 
         /// 构造函数
         public CStatistics()

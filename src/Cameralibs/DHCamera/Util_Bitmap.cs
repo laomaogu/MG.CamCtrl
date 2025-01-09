@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using GxIAPINET; 
-using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using GxIAPINET;
 namespace MG.CamCtrl.Cameralibs.DHCmera
 {
     class Util_Bitmap
@@ -136,23 +132,23 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
                     __UpdateBitmapForSave(m_byMonoBuffer);
                 }
 
-               
-            } 
-            return  m_bitmap ;
+
+            }
+            return m_bitmap;
         }
 
 
 
-            public Bitmap GetBmp1(IBaseData objIBaseData)
+        public Bitmap GetBmp1(IBaseData objIBaseData)
+        {
+            GX_VALID_BIT_LIST emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
+
+            //检查图像是否改变并更新Buffer
+            __UpdateBufferSize(objIBaseData);
+
+            if (null != objIBaseData)
             {
-                 GX_VALID_BIT_LIST emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
-
-                //检查图像是否改变并更新Buffer
-                __UpdateBufferSize(objIBaseData);
-
-                if (null != objIBaseData)
-                 {
-                     emValidBits = __GetBestValudBit(objIBaseData.GetPixelFormat());
+                emValidBits = __GetBestValudBit(objIBaseData.GetPixelFormat());
                 if (GX_FRAME_STATUS_LIST.GX_FRAME_STATUS_SUCCESS == objIBaseData.GetStatus())
                 {
                     if (m_bIsColor)
@@ -178,45 +174,45 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
                     }
                 }
 
-                }
-                return (Bitmap)m_bitmap.Clone();
             }
+            return (Bitmap)m_bitmap.Clone();
+        }
 
 
-            /// <summary>
-            /// 检查图像是否改变并更新Buffer
-            /// </summary>
-            /// <param name="objIBaseData">图像数据对象</param>
-            private void __UpdateBufferSize(IBaseData objIBaseData)
-            { 
-               
-                if (null != objIBaseData)
+        /// <summary>
+        /// 检查图像是否改变并更新Buffer
+        /// </summary>
+        /// <param name="objIBaseData">图像数据对象</param>
+        private void __UpdateBufferSize(IBaseData objIBaseData)
+        {
+
+            if (null != objIBaseData)
+            {
+                //宽 高 格式 是否相同
+                if (__IsCompatible(m_bitmap, m_nWidth, m_nHeigh, m_bIsColor))
                 {
-                    //宽 高 格式 是否相同
-                    if (__IsCompatible(m_bitmap, m_nWidth, m_nHeigh, m_bIsColor))
-                    {
-                        m_nPayloadSize = (int)objIBaseData.GetPayloadSize();
-                        m_nWidth = (int)objIBaseData.GetWidth();
-                        m_nHeigh = (int)objIBaseData.GetHeight();
-                    }
-                    else
-                    {
-                        m_nPayloadSize = (int)objIBaseData.GetPayloadSize();
-                        m_nWidth = (int)objIBaseData.GetWidth();
-                        m_nHeigh = (int)objIBaseData.GetHeight();
-
-                        m_byRawBuffer = new byte[m_nPayloadSize];
-                        m_byMonoBuffer = new byte[__GetStride(m_nWidth, m_bIsColor) * m_nHeigh];
-                        m_byColorBuffer = new byte[__GetStride(m_nWidth, m_bIsColor) * m_nHeigh];
-
-                        //更新BitmapInfo
-                        m_objBitmapInfo.bmiHeader.biWidth = m_nWidth;
-                        m_objBitmapInfo.bmiHeader.biHeight = m_nHeigh;
-                        Marshal.StructureToPtr(m_objBitmapInfo, m_pBitmapInfo, false);
-                    }
+                    m_nPayloadSize = (int)objIBaseData.GetPayloadSize();
+                    m_nWidth = (int)objIBaseData.GetWidth();
+                    m_nHeigh = (int)objIBaseData.GetHeight();
                 }
-            }  
-       
+                else
+                {
+                    m_nPayloadSize = (int)objIBaseData.GetPayloadSize();
+                    m_nWidth = (int)objIBaseData.GetWidth();
+                    m_nHeigh = (int)objIBaseData.GetHeight();
+
+                    m_byRawBuffer = new byte[m_nPayloadSize];
+                    m_byMonoBuffer = new byte[__GetStride(m_nWidth, m_bIsColor) * m_nHeigh];
+                    m_byColorBuffer = new byte[__GetStride(m_nWidth, m_bIsColor) * m_nHeigh];
+
+                    //更新BitmapInfo
+                    m_objBitmapInfo.bmiHeader.biWidth = m_nWidth;
+                    m_objBitmapInfo.bmiHeader.biHeight = m_nHeigh;
+                    Marshal.StructureToPtr(m_objBitmapInfo, m_pBitmapInfo, false);
+                }
+            }
+        }
+
 
         /// <summary>
         /// 更新存储数据
@@ -412,42 +408,42 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG8:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB8:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG8:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG10:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_2_9;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_2_9;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG12:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_4_11;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_4_11;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO14:
-                    {
-                        //暂时没有这样的数据格式待升级
-                        break;
-                    }
+                {
+                    //暂时没有这样的数据格式待升级
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG16:
-                    {
-                        //暂时没有这样的数据格式待升级
-                        break;
-                    }
+                {
+                    //暂时没有这样的数据格式待升级
+                    break;
+                }
                 default:
                     break;
             }

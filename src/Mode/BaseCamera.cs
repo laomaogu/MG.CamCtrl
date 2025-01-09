@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace MG.CamCtrl.Mode
 {
-    internal  abstract class BaseCamera: ICamera
+    internal abstract class BaseCamera : ICamera
     {
         protected BaseCamera() { ActionGetImage += ResetActionImageSignal; }
 
@@ -131,11 +131,11 @@ namespace MG.CamCtrl.Mode
 
         public void GetCamConfig(out CamConfig config)
         {
-            GetExpouseTime(out ushort expouseTime);
+            GetExpouseTime(out ulong expouseTime);
             GetTriggerMode(out TriggerMode triggerMode, out TriggerSource hardwareTriggerModel);
             GetTriggerPolarity(out TriggerPolarity triggerPolarity);
             GetTriggerFliter(out ushort triggerfilter);
-            GetGain(out short gain);
+            GetGain(out float gain);
             GetTriggerDelay(out ushort triggerdelay);
 
             config = new CamConfig()
@@ -163,9 +163,9 @@ namespace MG.CamCtrl.Mode
 
 
 
-        public abstract bool SetExpouseTime(ushort value);
+        public abstract bool SetExpouseTime(ulong value);
 
-        public abstract bool GetExpouseTime(out ushort value);
+        public abstract bool GetExpouseTime(out ulong value);
 
 
 
@@ -195,9 +195,9 @@ namespace MG.CamCtrl.Mode
         public abstract bool GetTriggerDelay(out ushort delay);
 
 
-        public abstract bool SetGain(short gain);
+        public abstract bool SetGain(float gain);
 
-        public abstract bool GetGain(out short gain);
+        public abstract bool GetGain(out float gain);
 
         public abstract bool SetLineMode(IOLines line, LineMode mode);
         public abstract bool SetLineStatus(IOLines line, LineStatus linestatus);

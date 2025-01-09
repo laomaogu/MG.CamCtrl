@@ -1,16 +1,16 @@
-using GxIAPINET;
-using MG.CamCtrl.Cameralibs.DHCmera;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using GxIAPINET;
+using MG.CamCtrl.Cameralibs.DHCmera;
 
 namespace MG.CamCtrl.Mode
 {
     internal class DHCamera : BaseCamera
     {
-        public DHCamera() : base() {  }
+        public DHCamera() : base() { }
 
 
         #region  param
@@ -116,7 +116,7 @@ namespace MG.CamCtrl.Mode
 
 
         #region SettingConfig
-        public override bool SetExpouseTime(ushort value)
+        public override bool SetExpouseTime(ulong value)
         {
             try
             {
@@ -131,7 +131,7 @@ namespace MG.CamCtrl.Mode
             }
         }
 
-        public override bool GetExpouseTime(out ushort value)
+        public override bool GetExpouseTime(out ulong value)
         {
             value = 0;
             try
@@ -322,7 +322,7 @@ namespace MG.CamCtrl.Mode
             }
         }
 
-        public override bool SetGain(short gain)
+        public override bool SetGain(float gain)
         {
             try
             {
@@ -338,7 +338,7 @@ namespace MG.CamCtrl.Mode
             }
         }
 
-        public override bool GetGain(out short gain)
+        public override bool GetGain(out float gain)
         {
             gain = 0;
             try
@@ -508,7 +508,7 @@ namespace MG.CamCtrl.Mode
                 if (null != m_objIGXFeatureControl)
                 {
                     //设置采集模式连续采集
-                    m_objIGXFeatureControl.GetEnumFeature("AcquisitionMode").SetValue("Continuous"); 
+                    m_objIGXFeatureControl.GetEnumFeature("AcquisitionMode").SetValue("Continuous");
                     if (GXDeviceInfo.GetDeviceClass() == GX_DEVICE_CLASS_LIST.GX_DEVICE_CLASS_GEV)
                     {
 
@@ -516,7 +516,7 @@ namespace MG.CamCtrl.Mode
                         //针对千兆网相机，程序在Debug模式下调试运行时，相机的心跳超时时间自动设置为5min，
                         //这样做是为了不让相机的心跳超时影响程序的调试和单步执行，同时这也意味着相机在这5min内无法断开，除非使相机断电再上电
                         //为了解决掉线重连问题，将相机的心跳超时时间设置为1s，方便程序掉线后可以重新连接
-                        m_objIGXFeatureControl.GetIntFeature("GevHeartbeatTimeout").SetValue(1000); 
+                        m_objIGXFeatureControl.GetIntFeature("GevHeartbeatTimeout").SetValue(1000);
                     }
                 }
 

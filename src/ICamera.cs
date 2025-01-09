@@ -119,14 +119,14 @@ namespace MG.CamCtrl
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        bool SetExpouseTime(ushort value);
+        bool SetExpouseTime(ulong value);
 
         /// <summary>
         /// 获取曝光时长
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        bool GetExpouseTime(out ushort value);
+        bool GetExpouseTime(out ulong value);
 
         /// <summary>
         /// 设置硬触发极性
@@ -175,14 +175,14 @@ namespace MG.CamCtrl
         /// </summary>
         /// <param name="gain"></param>
         /// <returns></returns>
-        bool SetGain(short gain);
+        bool SetGain(float gain);
 
         /// <summary>
         /// 获取增益值
         /// </summary>
         /// <param name="gain"></param>
         /// <returns></returns>
-        bool GetGain(out short gain);
+        bool GetGain(out float gain);
 
         /// <summary>
         /// 设置信号线模式

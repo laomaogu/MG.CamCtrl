@@ -1,11 +1,33 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MG.CamCtrl.Cameralibs.HKCamera
 {
     internal class MVCameraCtrl
-    {
-        #region 委托声明
+    { /// <summary>
+      /// Constructor
+      /// </summary>
+        public MVCameraCtrl()
+        {
+            handle = IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// Destructor
+        /// </summary>
+        ~MVCameraCtrl()
+        {
+            handle = IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// 设备句柄
+        /// </summary>
+        IntPtr handle;
+
+        #region ch:委托声明 | en:delegate
+
         /// <summary>
         /// Grab callback
         /// </summary>
@@ -51,9 +73,119 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// <param name="pEventInfo">Event Info</param>
         /// <param name="pUser">User defined variable</param>
         public delegate void cbEventdelegateEx(ref MV_EVENT_OUT_INFO pEventInfo, IntPtr pUser);
+
+        /// <summary>
+        /// Stream Exception callback
+        /// </summary>
+        /// <param name="enExceptionType">Msg type</param>
+        /// <param name="pUser">User defined variable</param>
+        public delegate void cbStreamException(MV_CC_STREAM_EXCEPTION_TYPE enExceptionType, IntPtr pUser);
         #endregion
 
-        #region 相机的基本指令和操作
+        /// <summary>
+        /// Initialize
+        /// </summary>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_CC_Initialize_NET()
+        {
+            return MV_CC_Initialize();
+        }
+
+        /// <summary>
+        /// Finalize
+        /// </summary>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_CC_Finalize_NET()
+        {
+            return MV_CC_Finalize();
+        }
+
+        #region 采集卡接口
+        /// <summary>
+        /// 枚举采集卡设备信息
+        /// </summary>
+        /// <param name="nTLayerType">采集卡类型</param>
+        /// <param name="pInterfaceInfoList">设备信息</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_CC_EnumInterfaces_NET(UInt32 nTLayerType, ref MV_INTERFACE_INFO_LIST pInterfaceInfoList)
+        {
+            return MV_CC_EnumInterfaces(nTLayerType, ref pInterfaceInfoList);
+        }
+
+        /// <summary>
+        /// 创建采集卡设备句柄
+        /// </summary>
+        /// <param name="pInterfaceInfo">采集卡设备信息</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_CreateInterface_NET(ref MV_INTERFACE_INFO pInterfaceInfo)
+        {
+            if (IntPtr.Zero != handle)
+            {
+                MV_CC_DestroyInterface(handle);
+                handle = IntPtr.Zero;
+            }
+
+            return MV_CC_CreateInterface(ref handle, ref pInterfaceInfo);
+        }
+
+        /// <summary>
+        /// 通过采集卡ID创建设备句柄
+        /// </summary>
+        /// <param name="pInterfaceID">采集卡ID</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_CreateInterfaceByID_NET(String pInterfaceID)
+        {
+            if (IntPtr.Zero != handle)
+            {
+                MV_CC_DestroyInterface(handle);
+                handle = IntPtr.Zero;
+            }
+
+            return MV_CC_CreateInterfaceByID(ref handle, pInterfaceID);
+        }
+
+        /// <summary>
+        /// 打开采集卡设备
+        /// </summary>
+        /// <param name="strConfigFile">采集卡信息配置文件(目前不支持传配置文件)</param>
+        /// <returns></returns>
+        public Int32 MV_CC_OpenInterface_NET(String strConfigFile)
+        {
+            return MV_CC_OpenInterface(handle, strConfigFile);
+        }
+
+        /// <summary>
+        /// 关闭采集卡
+        /// </summary>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_CloseInterface_NET()
+        {
+            return MV_CC_CloseInterface(handle);
+        }
+
+        /// <summary>
+        /// 销毁采集卡句柄
+        /// </summary>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_DestroyInterface_NET()
+        {
+            Int32 nRet = MV_CC_DestroyInterface(handle);
+            handle = IntPtr.Zero;
+            return nRet;
+        }
+        #endregion
+
+
+        #region ch:相机的控制和取流接口 | en:Camera control and streaming
+        /// <summary>
+        /// Get Camera Handle
+        /// </summary>
+        /// <returns></returns>
+        public IntPtr GetCameraHandle()
+        {
+            return handle;
+        }
+
         /// <summary>
         /// Get SDK Version
         /// </summary>
@@ -98,6 +230,19 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
+        /// Enumerate device according to the specified ordering
+        /// </summary>
+        /// <param name="nTLayerType">Transmission layer of enumeration(All layer protocol type can input)</param>
+        /// <param name="stDevList">Device list</param>
+        /// <param name="pManufacturerName">Manufacture Name</param>
+        /// <param name="enSortMethod">Sorting Method</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_CC_EnumDevicesEx2_NET(UInt32 nTLayerType, ref MV_CC_DEVICE_INFO_LIST stDevList, string pManufacturerName, MV_SORT_METHOD enSortMethod)
+        {
+            return MV_CC_EnumDevicesEx2(nTLayerType, ref stDevList, pManufacturerName, enSortMethod);
+        }
+
+        /// <summary>
         /// Is the device accessible
         /// </summary>
         /// <param name="stDevInfo">Device Information</param>
@@ -105,23 +250,23 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// <returns>Access, return true. Not access, return false</returns>
         public static Boolean MV_CC_IsDeviceAccessible_NET(ref MV_CC_DEVICE_INFO stDevInfo, UInt32 nAccessMode)
         {
-            return MV_CC_IsDeviceAccessible(ref stDevInfo, nAccessMode);
+            Byte bRet = MV_CC_IsDeviceAccessible(ref stDevInfo, nAccessMode);
+            if (bRet != 0)
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
-        /// Constructor
+        /// Set SDK log path (Interfaces not recommended)
+        /// If the logging service MvLogServer is enabled, the interface is invalid and The logging service is enabled by default
         /// </summary>
-        public MVCameraCtrl()
+        /// <param name="pSDKLogPath"></param>
+        /// <returns></returns>
+        public static Int32 MV_CC_SetSDKLogPath_NET(String pSDKLogPath)
         {
-            handle = IntPtr.Zero;
-        }
-
-        /// <summary>
-        /// Destructor
-        /// </summary>
-        ~MVCameraCtrl()
-        {
-            //MV_CC_DestroyDevice_NET();
+            return MV_CC_SetSDKLogPath(pSDKLogPath);
         }
 
         /// <summary>
@@ -202,7 +347,17 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// <returns>Connected, return true. Not Connected or DIsconnected, return false</returns>
         public Boolean MV_CC_IsDeviceConnected_NET()
         {
-            return MV_CC_IsDeviceConnected(handle);
+            if (handle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            Byte bRet = MV_CC_IsDeviceConnected(handle);
+            if (bRet != 0)
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -328,6 +483,16 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
+        /// Get the number of valid images in the current image buffer
+        /// </summary>
+        /// <param name="pnValidImageNum">The number of valid images in the current image buffer</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_GetValidImageNum_NET(ref UInt32 pnValidImageNum)
+        {
+            return MV_CC_GetValidImageNum(handle, ref pnValidImageNum);
+        }
+
+        /// <summary>
         /// Display one frame image
         /// </summary>
         /// <param name="pDisplayInfo">Image information</param>
@@ -335,6 +500,21 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public Int32 MV_CC_DisplayOneFrame_NET(ref MV_DISPLAY_FRAME_INFO pDisplayInfo)
         {
             return MV_CC_DisplayOneFrame(handle, ref pDisplayInfo);
+        }
+
+        /// <summary>
+        /// Display one frame image Ex
+        /// </summary>
+        /// <param name="pDisplayHandle">dispaly Handle</param>
+        /// <param name="pDisplayInfoEx">Image information</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_DisplayOneFrameEx_NET(IntPtr pDisplayHandle, ref MV_DISPLAY_FRAME_INFO_EX pDisplayInfoEx)
+        {
+            if (IntPtr.Zero == pDisplayHandle)
+            {
+                return MV_E_PARAMETER;
+            }
+            return MV_CC_DisplayOneFrameEx(handle, pDisplayHandle, ref pDisplayInfoEx);
         }
 
         /// <summary>
@@ -388,7 +568,7 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
         #endregion
 
-        #region 设置和获取相机参数的万能接口
+        #region ch:相机属性万能配置接口&读写寄存器接口 | en: Camera attribute nodes set and obtained universal interface
         /// <summary>
         /// Get Integer value
         /// </summary>
@@ -434,6 +614,17 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
+        /// Get the symbolic of the specified value of the Enum type node
+        /// </summary>
+        /// <param name="strKey">Key value, for example, using "PixelFormat" to set pixel format</param>
+        /// <param name="pstEnumEntry">Symbolic to get</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_GetEnumEntrySymbolic_NET(String strKey, ref MVCC_ENUMENTRY pstEnumEntry)
+        {
+            return MV_CC_GetEnumEntrySymbolic(handle, strKey, ref pstEnumEntry);
+        }
+
+        /// <summary>
         /// Set Enum value
         /// </summary>
         /// <param name="strKey">Key value, for example, using "PixelFormat" to set pixel format</param>
@@ -443,6 +634,7 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_CC_SetEnumValueByString(handle, strKey, sValue);
         }
+
         /// <summary>
         /// Get Float value
         /// </summary>
@@ -520,37 +712,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
-        /// Invalidate GenICam Nodes
-        /// </summary>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_InvalidateNodes_NET()
-        {
-            return MV_CC_InvalidateNodes(handle);
-        }
-        #endregion
-
-        #region 设备升级 和 寄存器读写 和异常、事件回调
-        /// <summary>
-        /// Device Local Upgrade
-        /// </summary>
-        /// <param name="pFilePathName">File path and name</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_LocalUpgrade_NET(String pFilePathName)
-        {
-            return MV_CC_LocalUpgrade(handle, pFilePathName);
-        }
-
-        /// <summary>
-        /// Get Upgrade Progress
-        /// </summary>
-        /// <param name="pnProcess">Value of Progress</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_GetUpgradeProcess_NET(ref UInt32 pnProcess)
-        {
-            return MV_CC_GetUpgradeProcess(handle, ref pnProcess);
-        }
-
-        /// <summary>
         /// Read Memory
         /// </summary>
         /// <param name="pBuffer">Used as a return value, save the read-in memory value(Memory value is stored in accordance with the big end model)</param>
@@ -574,6 +735,143 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
             return MV_CC_WriteMemory(handle, pBuffer, nAddress, nLength);
         }
 
+        /// <summary>
+        /// Invalidate GenICam Nodes
+        /// </summary>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_InvalidateNodes_NET()
+        {
+            return MV_CC_InvalidateNodes(handle);
+        }
+
+        /// <summary>
+        /// Get camera feature tree XML
+        /// </summary>
+        /// <param name="pData">XML data receiving buffer</param>
+        /// <param name="nDataSize">Buffer size</param>
+        /// <param name="pnDataLen">Actual data length</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_XML_GetGenICamXML_NET(IntPtr pData, UInt32 nDataSize, ref UInt32 pnDataLen)
+        {
+            return MV_XML_GetGenICamXML(handle, pData, nDataSize, ref pnDataLen);
+        }
+
+        /// <summary>
+        /// Get Access mode of cur node
+        /// </summary>
+        /// <param name="pstrName">Name of node</param>
+        /// <param name="pAccessMode">Access mode of the node</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_XML_GetNodeAccessMode_NET(String pstrName, ref MV_XML_AccessMode pAccessMode)
+        {
+            return MV_XML_GetNodeAccessMode(handle, pstrName, ref pAccessMode);
+        }
+
+        /// <summary>
+        /// Get Interface Type of cur node
+        /// </summary>
+        /// <param name="pstrName">Name of node</param>
+        /// <param name="pInterfaceType">Interface Type of the node</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_XML_GetNodeInterfaceType_NET(String pstrName, ref MV_XML_InterfaceType pInterfaceType)
+        {
+            return MV_XML_GetNodeInterfaceType(handle, pstrName, ref pInterfaceType);
+        }
+
+        /// <summary>
+        /// Save camera feature
+        /// </summary>
+        /// <param name="pFileName">File name</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_FeatureSave_NET(String pFileName)
+        {
+            return MV_CC_FeatureSave(handle, pFileName);
+        }
+
+        /// <summary>
+        /// Load camera feature
+        /// </summary>
+        /// <param name="pFileName">File name</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_FeatureLoad_NET(String pFileName)
+        {
+            return MV_CC_FeatureLoad(handle, pFileName);
+        }
+
+        /// <summary>
+        /// Read the file from the camera
+        /// </summary>
+        /// <param name="pstFileAccess">File access structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_FileAccessRead_NET(ref MV_CC_FILE_ACCESS pstFileAccess)
+        {
+            return MV_CC_FileAccessRead(handle, ref pstFileAccess);
+        }
+
+        /// <summary>
+        /// Read the file from the camera
+        /// </summary>
+        /// <param name="pstFileAccessEx">File access structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_FileAccessReadEx_NET(ref MV_CC_FILE_ACCESS_EX pstFileAccessEx)
+        {
+            return MV_CC_FileAccessReadEx(handle, ref pstFileAccessEx);
+        }
+
+        /// <summary>
+        /// Write the file to camera
+        /// </summary>
+        /// <param name="pstFileAccess">File access structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_FileAccessWrite_NET(ref MV_CC_FILE_ACCESS pstFileAccess)
+        {
+            return MV_CC_FileAccessWrite(handle, ref pstFileAccess);
+        }
+
+        /// <summary>
+        /// Write the file to camera
+        /// </summary>
+        /// <param name="pstFileAccessEx">File access structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_FileAccessWriteEx_NET(ref MV_CC_FILE_ACCESS_EX pstFileAccessEx)
+        {
+            return MV_CC_FileAccessWriteEx(handle, ref pstFileAccessEx);
+        }
+
+        /// <summary>
+        /// Get File Access Progress 
+        /// </summary>
+        /// <param name="pstFileAccessProgress">File access Progress</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_GetFileAccessProgress_NET(ref MV_CC_FILE_ACCESS_PROGRESS pstFileAccessProgress)
+        {
+            return MV_CC_GetFileAccessProgress(handle, ref pstFileAccessProgress);
+        }
+        #endregion
+
+        #region ch: 设备升级 | en: Device upgrade interface
+        /// <summary>
+        /// Device Local Upgrade
+        /// </summary>
+        /// <param name="pFilePathName">File path and name</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_LocalUpgrade_NET(String pFilePathName)
+        {
+            return MV_CC_LocalUpgrade(handle, pFilePathName);
+        }
+
+        /// <summary>
+        /// Get Upgrade Progress
+        /// </summary>
+        /// <param name="pnProcess">Value of Progress</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_GetUpgradeProcess_NET(ref UInt32 pnProcess)
+        {
+            return MV_CC_GetUpgradeProcess(handle, ref pnProcess);
+        }
+        #endregion
+
+        #region ch: 注册异常回调和事件接口 | en: Enrol abnormal callbacks and event interface
         /// <summary>
         /// Register Exception Message CallBack, call after open device
         /// </summary>
@@ -609,7 +907,17 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
         #endregion
 
-        #region GigEVision 设备独有的接口
+        #region ch: 仅GigE设备支持的接口 | en: Only support GigE device interface
+        /// <summary>
+        /// Set enumerate device timeout
+        /// </summary>
+        /// <param name="nMilTimeout">time out,default 100ms</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_GIGE_SetEnumDevTimeout_NET(UInt32 nMilTimeout)
+        {
+            return MV_GIGE_SetEnumDevTimeout(nMilTimeout);
+        }
+
         /// <summary>
         /// Force IP
         /// </summary>
@@ -657,7 +965,7 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// </summary>
         /// <param name="nMode">ACK mode（Default-Broadcast）,0-Unicast,1-Broadcast</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_GIGE_SetDiscoveryMode_NET(UInt32 nMode)
+        public static Int32 MV_GIGE_SetDiscoveryMode_NET(UInt32 nMode)
         {
             return MV_GIGE_SetDiscoveryMode(nMode);
         }
@@ -816,17 +1124,12 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
         #endregion
 
-        #region CameraLink独有的接口
+        #region ch: 仅CameraLink 设备支持的接口 | en: Only support camlink device interface
         /// <summary>
         /// Set device baudrate using one of the CL_BAUDRATE_XXXX value
         /// </summary>
         /// <param name="nBaudrate">Baudrate to set. Refer to the 'CameraParams.h' for parameter definitions, for example, #define MV_CAML_BAUDRATE_9600  0x00000001</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CAML_SetDeviceBaudrate_NET(UInt32 nBaudrate)
-        {
-            return MV_CAML_SetDeviceBaudrate(handle, nBaudrate);
-        }
-
         public Int32 MV_CAML_SetDeviceBauderate_NET(UInt32 nBaudrate)
         {
             return MV_CAML_SetDeviceBaudrate(handle, nBaudrate);
@@ -838,11 +1141,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// <param name="pnCurrentBaudrate">Return pointer of baud rate to user. 
         ///                                 Refer to the 'CameraParams.h' for parameter definitions, for example, #define MV_CAML_BAUDRATE_9600  0x00000001</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CAML_GetDeviceBaudrate_NET(ref UInt32 pnCurrentBaudrate)
-        {
-            return MV_CAML_GetDeviceBaudrate(handle, ref pnCurrentBaudrate);
-        }
-
         public Int32 MV_CAML_GetDeviceBauderate_NET(ref UInt32 pnCurrentBaudrate)
         {
             return MV_CAML_GetDeviceBaudrate(handle, ref pnCurrentBaudrate);
@@ -854,11 +1152,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// <param name="pnBaudrateAblity">Return pointer of the supported baudrates to user. 'OR' operation results of the supported baudrates. 
         ///                                Refer to the 'CameraParams.h' for single value definitions, for example, #define MV_CAML_BAUDRATE_9600  0x00000001</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CAML_GetSupportBaudrates_NET(ref UInt32 pnBaudrateAblity)
-        {
-            return MV_CAML_GetSupportBaudrates(handle, ref pnBaudrateAblity);
-        }
-
         public Int32 MV_CAML_GetSupportBauderates_NET(ref UInt32 pnBaudrateAblity)
         {
             return MV_CAML_GetSupportBaudrates(handle, ref pnBaudrateAblity);
@@ -875,7 +1168,7 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
         #endregion
 
-        #region U3V独有的接口
+        #region ch: 仅U3V设备支持的接口 | en: Only support U3V device interface
         /// <summary>
         /// Set transfer size of U3V device
         /// </summary>
@@ -915,9 +1208,50 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_USB_GetTransferWays(handle, ref pTransferWays);
         }
+
+        /// <summary>
+        /// Register Stream Exception Message CallBack
+        /// </summary>
+        /// <param name="cbException">Stream Exception Message CallBack Function</param>
+        /// <param name="pUser">User defined variable</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_USB_RegisterStreamExceptionCallBack_NET(cbStreamException cbException, IntPtr pUser)
+        {
+            return MV_USB_RegisterStreamExceptionCallBack(handle, cbException, pUser);
+        }
+
+        /// <summary>
+        /// Set the number of U3V device event cache nodes
+        /// </summary>
+        /// <param name="nEventNodeNum">Event Node Number</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_USB_SetEventNodeNum_NET(UInt32 nEventNodeNum)
+        {
+            return MV_USB_SetEventNodeNum(handle, nEventNodeNum);
+        }
+
+        /// <summary>
+        /// Set U3V Camera Synchronisation timeout
+        /// </summary>
+        /// <param name="nMills">Synchronisation time(ms), default 1000ms</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_USB_SetSyncTimeOut_NET(UInt32 nMills)
+        {
+            return MV_USB_SetSyncTimeOut(handle, nMills);
+        }
+
+        /// <summary>
+        /// Get U3V Camera Synchronisation timeout
+        /// </summary>
+        /// <param name="pnMills">Synchronisation time(ms), default 1000ms</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_USB_GetSyncTimeOut_NET(ref UInt32 pnMills)
+        {
+            return MV_USB_GetSyncTimeOut(handle, ref pnMills);
+        }
         #endregion
 
-        #region GenTL相关接口，其它接口可以复用（部分接口不支持）
+        #region ch: GenTL相关接口 | en: GenTL related interface
         /// <summary>
         /// Enumerate interfaces by GenTL
         /// </summary>
@@ -927,6 +1261,16 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public static Int32 MV_CC_EnumInterfacesByGenTL_NET(ref MV_GENTL_IF_INFO_LIST stIFInfoList, String pGenTLPath)
         {
             return MV_CC_EnumInterfacesByGenTL(ref stIFInfoList, pGenTLPath);
+        }
+
+        /// <summary>
+        /// Unload cti library
+        /// </summary>
+        /// <param name="strGenTLPath">GenTL cti file path</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public static Int32 MV_CC_UnloadGenTLLibrary_NET(String strGenTLPath)
+        {
+            return MV_CC_UnloadGenTLLibrary(strGenTLPath);
         }
 
         /// <summary>
@@ -957,51 +1301,15 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
         #endregion
 
-        #region XML解析树的生成
+        #region ch: 图像保存、格式转换等相关接口 | en: Related image save and format convert interface
         /// <summary>
-        /// Get camera feature tree XML
-        /// </summary>
-        /// <param name="pData">XML data receiving buffer</param>
-        /// <param name="nDataSize">Buffer size</param>
-        /// <param name="pnDataLen">Actual data length</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_XML_GetGenICamXML_NET(IntPtr pData, UInt32 nDataSize, ref UInt32 pnDataLen)
-        {
-            return MV_XML_GetGenICamXML(handle, pData, nDataSize, ref pnDataLen);
-        }
-
-        /// <summary>
-        /// Get Access mode of cur node
-        /// </summary>
-        /// <param name="pstrName">Name of node</param>
-        /// <param name="pAccessMode">Access mode of the node</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_XML_GetNodeAccessMode_NET(String pstrName, ref MV_XML_AccessMode pAccessMode)
-        {
-            return MV_XML_GetNodeAccessMode(handle, pstrName, ref pAccessMode);
-        }
-
-        /// <summary>
-        /// Get Interface Type of cur node
-        /// </summary>
-        /// <param name="pstrName">Name of node</param>
-        /// <param name="pInterfaceType">Interface Type of the node</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_XML_GetNodeInterfaceType_NET(String pstrName, ref MV_XML_InterfaceType pInterfaceType)
-        {
-            return MV_XML_GetNodeInterfaceType(handle, pstrName, ref pInterfaceType);
-        }
-        #endregion
-
-        #region 附加接口
-        /// <summary>
-        /// Save image, support Bmp and Jpeg. Encoding quality(50-99]
+        /// Save image, support Bmp and Jpeg.
         /// </summary>
         /// <param name="stSaveParam">Save image parameters structure</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_SaveImageEx_NET(ref MV_SAVE_IMAGE_PARAM_EX stSaveParam)
+        public Int32 MV_CC_SaveImageEx3_NET(ref MV_SAVE_IMAGE_PARAM_EX3 stSaveParam)
         {
-            return MV_CC_SaveImageEx2(handle, ref stSaveParam);
+            return MV_CC_SaveImageEx3(handle, ref stSaveParam);
         }
 
         /// <summary>
@@ -1009,9 +1317,9 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// </summary>
         /// <param name="pstSaveFileParam">Save the image file parameter structure</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_SaveImageToFile_NET(ref MV_SAVE_IMG_TO_FILE_PARAM pstSaveFileParam)
+        public Int32 MV_CC_SaveImageToFileEx_NET(ref MV_SAVE_IMG_TO_FILE_PARAM_EX pstSaveFileParam)
         {
-            return MV_CC_SaveImageToFile(handle, ref pstSaveFileParam);
+            return MV_CC_SaveImageToFileEx(handle, ref pstSaveFileParam);
         }
 
         /// <summary>
@@ -1049,9 +1357,9 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         /// </summary>
         /// <param name="pstCvtParam">Convert Pixel Type parameter structure</param>
         /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_ConvertPixelType_NET(ref MV_PIXEL_CONVERT_PARAM pstCvtParam)
+        public Int32 MV_CC_ConvertPixelTypeEx_NET(ref MV_CC_PIXEL_CONVERT_PARAM_EX pstCvtParam)
         {
-            return MV_CC_ConvertPixelType(handle, ref pstCvtParam);
+            return MV_CC_ConvertPixelTypeEx(handle, ref pstCvtParam);
         }
 
         /// <summary>
@@ -1065,13 +1373,34 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
-        /// Set Gamma value
+        /// Filter type of the bell interpolation quality algorithm setting
+        /// </summary>
+        /// <param name="bFilterEnable">Filter type enable</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_SetBayerFilterEnable_NET(Boolean bFilterEnable)
+        {
+            return MV_CC_SetBayerFilterEnable(handle, bFilterEnable);
+        }
+
+        /// <summary>
+        /// Set Bayer Gamma value
         /// </summary>
         /// <param name="fBayerGammaValue">Gamma value[0.1,4.0]</param>
         /// <returns>Success, return MV_OK. Failure, return error code </returns>
         public Int32 MV_CC_SetBayerGammaValue_NET(Single fBayerGammaValue)
         {
             return MV_CC_SetBayerGammaValue(handle, fBayerGammaValue);
+        }
+
+        /// <summary>
+        /// Set Mono8/Bayer Gamma value
+        /// </summary>
+        /// <param name="enPixelType">PixelType</param>
+        /// <param name="fGammaValue">Gamma value[0.1,4.0]</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_SetGammaValue_NET(MvGvspPixelType enPixelType, Single fGammaValue)
+        {
+            return MV_CC_SetGammaValue(handle, enPixelType, fGammaValue);
         }
 
         /// <summary>
@@ -1105,16 +1434,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
-        /// Set CLUT param
-        /// </summary>
-        /// <param name="pstCLUTParam">CLUT parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_SetBayerCLUTParam_NET(ref MV_CC_CLUT_PARAM pstCLUTParam)
-        {
-            return MV_CC_SetBayerCLUTParam(handle, ref pstCLUTParam);
-        }
-
-        /// <summary>
         /// Adjust image contrast
         /// </summary>
         /// <param name="pstContrastParam">Contrast parameter structure</param>
@@ -1122,66 +1441,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public Int32 MV_CC_ImageContrast_NET(ref MV_CC_CONTRAST_PARAM pstContrastParam)
         {
             return MV_CC_ImageContrast(handle, ref pstContrastParam);
-        }
-
-        /// <summary>
-        /// Image sharpen
-        /// </summary>
-        /// <param name="pstSharpenParam">Sharpen parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_ImageSharpen_NET(ref MV_CC_SHARPEN_PARAM pstSharpenParam)
-        {
-            return MV_CC_ImageSharpen(handle, ref pstSharpenParam);
-        }
-
-        /// <summary>
-        /// Color Correct(include CCM and CLUT)
-        /// </summary>
-        /// <param name="pstColorCorrectParam">Color Correct parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_ColorCorrect_NET(ref MV_CC_COLOR_CORRECT_PARAM pstColorCorrectParam)
-        {
-            return MV_CC_ColorCorrect(handle, ref pstColorCorrectParam);
-        }
-
-        /// <summary>
-        /// Noise Estimate
-        /// </summary>
-        /// <param name="pstNoiseEstimateParam">Noise Estimate parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_NoiseEstimate_NET(ref MV_CC_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam)
-        {
-            return MV_CC_NoiseEstimate(handle, ref pstNoiseEstimateParam);
-        }
-
-        /// <summary>
-        /// Spatial Denoise
-        /// </summary>
-        /// <param name="pstSpatialDenoiseParam">Spatial Denoise parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_SpatialDenoise_NET(ref MV_CC_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam)
-        {
-            return MV_CC_SpatialDenoise(handle, ref pstSpatialDenoiseParam);
-        }
-
-        /// <summary>
-        /// LSC Calib
-        /// </summary>
-        /// <param name="pstLSCCalibParam">LSC Calib parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_LSCCalib_NET(ref MV_CC_LSC_CALIB_PARAM pstLSCCalibParam)
-        {
-            return MV_CC_LSCCalib(handle, ref pstLSCCalibParam);
-        }
-
-        /// <summary>
-        /// LSC Correct
-        /// </summary>
-        /// <param name="pstLSCCorrectParam">LSC Correct parameter structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_LSCCorrect_NET(ref MV_CC_LSC_CORRECT_PARAM pstLSCCorrectParam)
-        {
-            return MV_CC_LSCCorrect(handle, ref pstLSCCorrectParam);
         }
 
         /// <summary>
@@ -1195,91 +1454,33 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
-        /// Noise estimate of Bayer format
+        /// Draw Rect Auxiliary Line
         /// </summary>
-        /// <param name="pstNoiseEstimateParam">Noise estimate parameter structure</param>
+        /// <param name="pstRectInfo">Rect Auxiliary Line Info</param>
         /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_BayerNoiseEstimate_NET(ref MV_CC_BAYER_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam)
+        public Int32 MV_CC_DrawRect_NET(ref MVCC_RECT_INFO pstRectInfo)
         {
-            return MV_CC_BayerNoiseEstimate(handle, ref pstNoiseEstimateParam);
+            return MV_CC_DrawRect(handle, ref pstRectInfo);
         }
 
         /// <summary>
-        /// Spatial Denoise of Bayer format
+        /// Draw Circle Auxiliary Line
         /// </summary>
-        /// <param name="pstSpatialDenoiseParam">Spatial Denoise parameter structure</param>
+        /// <param name="pstCircleInfo">Circle Auxiliary Line Info</param>
         /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_BayerSpatialDenoise_NET(ref MV_CC_BAYER_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam)
+        public Int32 MV_CC_DrawCircle_NET(ref MVCC_CIRCLE_INFO pstCircleInfo)
         {
-            return MV_CC_BayerSpatialDenoise(handle, ref pstSpatialDenoiseParam);
+            return MV_CC_DrawCircle(handle, ref pstCircleInfo);
         }
 
         /// <summary>
-        /// Start Grabbing Ex
+        /// Draw Line Auxiliary Line
         /// </summary>
+        /// <param name="pstLinesInfo">Linear Auxiliary Line Info</param>
         /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_StartGrabbingEx_NET(UInt32 bNeedStart)
+        public Int32 MV_CC_DrawLines_NET(ref MVCC_LINES_INFO pstLinesInfo)
         {
-            return MV_CC_StartGrabbingEx(handle, bNeedStart);
-        }
-
-        /// <summary>
-        /// Start Grabbing Ex
-        /// </summary>
-        /// <returns>Success, return MV_OK. Failure, return error code</returns>
-        public Int32 MV_CC_StopGrabbingEx_NET(UInt32 bNeedStart)
-        {
-            return MV_CC_StopGrabbingEx(handle, bNeedStart);
-        }
-
-        /// <summary>
-        /// Save camera feature
-        /// </summary>
-        /// <param name="pFileName">File name</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_FeatureSave_NET(String pFileName)
-        {
-            return MV_CC_FeatureSave(handle, pFileName);
-        }
-
-        /// <summary>
-        /// Load camera feature
-        /// </summary>
-        /// <param name="pFileName">File name</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_FeatureLoad_NET(String pFileName)
-        {
-            return MV_CC_FeatureLoad(handle, pFileName);
-        }
-
-        /// <summary>
-        /// Read the file from the camera
-        /// </summary>
-        /// <param name="pstFileAccess">File access structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_FileAccessRead_NET(ref MV_CC_FILE_ACCESS pstFileAccess)
-        {
-            return MV_CC_FileAccessRead(handle, ref pstFileAccess);
-        }
-
-        /// <summary>
-        /// Write the file to camera
-        /// </summary>
-        /// <param name="pstFileAccess">File access structure</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_FileAccessWrite_NET(ref MV_CC_FILE_ACCESS pstFileAccess)
-        {
-            return MV_CC_FileAccessWrite(handle, ref pstFileAccess);
-        }
-
-        /// <summary>
-        /// Get File Access Progress 
-        /// </summary>
-        /// <param name="pstFileAccessProgress">File access Progress</param>
-        /// <returns>Success, return MV_OK. Failure, return error code </returns>
-        public Int32 MV_CC_GetFileAccessProgress_NET(ref MV_CC_FILE_ACCESS_PROGRESS pstFileAccessProgress)
-        {
-            return MV_CC_GetFileAccessProgress(handle, ref pstFileAccessProgress);
+            return MV_CC_DrawLines(handle, ref pstLinesInfo);
         }
 
         /// <summary>
@@ -1310,20 +1511,186 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_CC_StopRecord(handle);
         }
-        #endregion
 
-        #region 不建议使用的接口 Interfaces not recommended
         /// <summary>
-        /// Set SDK log path (Interfaces not recommended)
-        /// If the logging service MvLogServer is enabled, the interface is invalid and The logging service is enabled by default
+        /// Open the GUI interface for getting or setting camera parameters
         /// </summary>
-        /// <param name="pSDKLogPath"></param>
-        /// <returns></returns>
-        public static Int32 MV_CC_SetSDKLogPath_NET(String pSDKLogPath)
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_OpenParamsGUI_NET()
         {
-            return MV_CC_SetSDKLogPath(pSDKLogPath);
+            return MV_CC_OpenParamsGUI(handle);
         }
 
+        /// <summary>
+        /// Reconstruct Image(For time-division exposure function)
+        /// </summary>
+        /// <param name="pstReconstructParam">Reconstruct image parameters</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_ReconstructImage_NET(ref MV_RECONSTRUCT_IMAGE_PARAM pstReconstructParam)
+        {
+            return MV_CC_ReconstructImage(handle, ref pstReconstructParam);
+        }
+        #endregion
+
+        #region ch: 内部使用的公共功能接口 | en: Inner Interface
+        /// <summary>
+        /// Byte array to struct
+        /// </summary>
+        /// <param name="bytes">Byte array</param>
+        /// <param name="type">Struct type</param>
+        /// <returns>Struct object</returns>
+        public static object ByteToStruct(Byte[] bytes, Type type)
+        {
+            int size = Marshal.SizeOf(type);
+            if (size > bytes.Length)
+            {
+                return null;
+            }
+
+            // 分配结构体内存空间
+            IntPtr structPtr = Marshal.AllocHGlobal(size);
+
+            // 将byte数组拷贝到分配好的内存空间
+            Marshal.Copy(bytes, 0, structPtr, size);
+
+            // 将内存空间转换为目标结构体
+            object obj = Marshal.PtrToStructure(structPtr, type);
+
+            // 释放内存空间
+            Marshal.FreeHGlobal(structPtr);
+
+            return obj;
+        }
+
+        /// <summary>
+        /// 判断字符数组是否为utf-8
+        /// </summary>
+        /// <param name="inputStream">字符数组</param>
+        /// <returns></returns>
+        public static bool IsTextUTF8(byte[] inputStream)
+        {
+            int encodingBytesCount = 0;
+            bool allTextsAreASCIIChars = true;
+
+            for (int i = 0; i < inputStream.Length; i++)
+            {
+                byte current = inputStream[i];
+
+                if ((current & 0x80) == 0x80)
+                {
+                    allTextsAreASCIIChars = false;
+                }
+                // First byte
+                if (encodingBytesCount == 0)
+                {
+                    if ((current & 0x80) == 0)
+                    {
+                        // ASCII chars, from 0x00-0x7F
+                        continue;
+                    }
+
+                    if ((current & 0xC0) == 0xC0)
+                    {
+                        encodingBytesCount = 1;
+                        current <<= 2;
+
+                        // More than two bytes used to encoding a unicode char.
+                        // Calculate the real length.
+                        while ((current & 0x80) == 0x80)
+                        {
+                            current <<= 1;
+                            encodingBytesCount++;
+                        }
+                    }
+                    else
+                    {
+                        // Invalid bits structure for UTF8 encoding rule.
+                        return false;
+                    }
+                }
+                else
+                {
+                    // Following bytes, must start with 10.
+                    if ((current & 0xC0) == 0x80)
+                    {
+                        encodingBytesCount--;
+                    }
+                    else
+                    {
+                        // Invalid bits structure for UTF8 encoding rule.
+                        return false;
+                    }
+                }
+            }
+
+            if (encodingBytesCount != 0)
+            {
+                // Invalid bits structure for UTF8 encoding rule.
+                // Wrong following bytes count.
+                return false;
+            }
+
+            // Although UTF8 supports encoding for ASCII chars, we regard as a input stream, whose contents are all ASCII as default encoding.
+            return !allTextsAreASCIIChars;
+        }
+
+        /// <summary>
+        /// Write Error Message
+        /// </summary>
+        /// <param name="csMessage">Message</param>
+        /// <param name="nErrorNum">ErrorNum</param>
+        public static void WriteErrorMsg(string csMessage, int nErrorNum)
+        {
+            string errorMsg;
+            if (nErrorNum == 0)
+            {
+                errorMsg = csMessage;
+            }
+            else
+            {
+                errorMsg = csMessage + ": Error =" + String.Format("{0:X}", nErrorNum);
+            }
+
+            //TextWriterTraceListener TraceListener = new System.Diagnostics.TextWriterTraceListener(@"debug.txt");
+            //Debug.Listeners.Add(TraceListener);
+            //Debug.WriteLine(System.DateTime.Now.ToString());
+            //Debug.WriteLine(errorMsg);
+            //TraceListener.Flush();
+            Debug.WriteLine(errorMsg);
+        }
+        #endregion
+
+        #region ch: 弃用的接口 | en: Abandoned interface
+
+        /// <summary>
+        /// Save image, support Bmp and Jpeg.
+        /// </summary>
+        /// <param name="stSaveParam">Save image parameters structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_SaveImageEx2_NET(ref MV_SAVE_IMAGE_PARAM_EX2 stSaveParam)
+        {
+            return MV_CC_SaveImageEx2(handle, ref stSaveParam);
+        }
+
+        /// <summary>
+        /// Save the image file, support Bmp、 Jpeg、Png and Tiff. Encoding quality(50-99]
+        /// </summary>
+        /// <param name="pstSaveFileParam">Save the image file parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code </returns>
+        public Int32 MV_CC_SaveImageToFile_NET(ref MV_SAVE_IMG_TO_FILE_PARAM pstSaveFileParam)
+        {
+            return MV_CC_SaveImageToFile(handle, ref pstSaveFileParam);
+        }
+
+        /// <summary>
+        /// Pixel format conversion
+        /// </summary>
+        /// <param name="pstCvtParam">Convert Pixel Type parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_ConvertPixelType_NET(ref MV_PIXEL_CONVERT_PARAM pstCvtParam)
+        {
+            return MV_CC_ConvertPixelType(handle, ref pstCvtParam);
+        }
         /// <summary>
         /// Get basic information of image (Interfaces not recommended)
         /// </summary>
@@ -1407,9 +1774,37 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_XML_RegisterUpdateCallBack(handle, cbXmlUpdate, pUser);
         }
-        #endregion
 
-        #region 弃用的接口（存在更优化的接口可替换）Abandoned interface
+        /// <summary>
+        /// Noise estimate of Bayer format
+        /// </summary>
+        /// <param name="pstNoiseEstimateParam">Noise estimate parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_BayerNoiseEstimate_NET(ref MV_CC_BAYER_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam)
+        {
+            return MV_CC_BayerNoiseEstimate(handle, ref pstNoiseEstimateParam);
+        }
+
+        /// <summary>
+        /// Spatial Denoise of Bayer format
+        /// </summary>
+        /// <param name="pstSpatialDenoiseParam">Spatial Denoise parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_BayerSpatialDenoise_NET(ref MV_CC_BAYER_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam)
+        {
+            return MV_CC_BayerSpatialDenoise(handle, ref pstSpatialDenoiseParam);
+        }
+
+        /// <summary>
+        /// This interface is abandoned, it is recommended to use the MV_CC_DisplayOneFrame
+        /// </summary>
+        /// <param name="hWnd"></param>
+        /// <returns></returns>
+        public Int32 MV_CC_Display_NET(IntPtr hWnd)
+        {
+            return MV_CC_Display(handle, hWnd);
+        }
+
         /// <summary>
         /// This interface is abandoned, it is recommended to use the MV_CC_GetOneFrameTimeOut
         /// </summary>
@@ -1432,17 +1827,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public Int32 MV_CC_GetOneFrameEx_NET(IntPtr pData, UInt32 nDataSize, ref MV_FRAME_OUT_INFO_EX pFrameInfo)
         {
             return MV_CC_GetOneFrameEx(handle, pData, nDataSize, ref pFrameInfo);
-        }
-
-        /// <summary>
-        /// This interface is abandoned, it is recommended to use the MV_CC_RegisterImageCallBackEx
-        /// </summary>
-        /// <param name="cbOutput"></param>
-        /// <param name="pUser"></param>
-        /// <returns></returns>
-        public Int32 MV_CC_RegisterImageCallBack_NET(cbOutputdelegate cbOutput, IntPtr pUser)
-        {
-            return MV_CC_RegisterImageCallBack(handle, cbOutput, pUser);
         }
 
         /// <summary>
@@ -1477,16 +1861,6 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         }
 
         /// <summary>
-        /// This interface is abandoned, it is recommended to use the MV_CC_DisplayOneFrame
-        /// </summary>
-        /// <param name="hWnd"></param>
-        /// <returns></returns>
-        public Int32 MV_CC_Display_NET(IntPtr hWnd)
-        {
-            return MV_CC_Display(handle, hWnd);
-        }
-
-        /// <summary>
         /// This interface is abandoned, it is recommended to use the MV_CC_GetIntValueEx
         /// </summary>
         /// <param name="strKey"></param>
@@ -1507,9 +1881,77 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_CC_SetIntValue(handle, strKey, nValue);
         }
-        #endregion
 
-        #region 相机参数获取和设置，此模块的所有接口已废弃，建议使用上面的万能接口代替
+        /// <summary>
+        /// Set CLUT param
+        /// </summary>
+        /// <param name="pstCLUTParam">CLUT parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_SetBayerCLUTParam_NET(ref MV_CC_CLUT_PARAM pstCLUTParam)
+        {
+            return MV_CC_SetBayerCLUTParam(handle, ref pstCLUTParam);
+        }
+
+        /// <summary>
+        /// Image sharpen
+        /// </summary>
+        /// <param name="pstSharpenParam">Sharpen parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_ImageSharpen_NET(ref MV_CC_SHARPEN_PARAM pstSharpenParam)
+        {
+            return MV_CC_ImageSharpen(handle, ref pstSharpenParam);
+        }
+
+        /// <summary>
+        /// Color Correct(include CCM and CLUT)
+        /// </summary>
+        /// <param name="pstColorCorrectParam">Color Correct parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_ColorCorrect_NET(ref MV_CC_COLOR_CORRECT_PARAM pstColorCorrectParam)
+        {
+            return MV_CC_ColorCorrect(handle, ref pstColorCorrectParam);
+        }
+
+        /// <summary>
+        /// Noise Estimate
+        /// </summary>
+        /// <param name="pstNoiseEstimateParam">Noise Estimate parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_NoiseEstimate_NET(ref MV_CC_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam)
+        {
+            return MV_CC_NoiseEstimate(handle, ref pstNoiseEstimateParam);
+        }
+
+        /// <summary>
+        /// Spatial Denoise
+        /// </summary>
+        /// <param name="pstSpatialDenoiseParam">Spatial Denoise parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_SpatialDenoise_NET(ref MV_CC_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam)
+        {
+            return MV_CC_SpatialDenoise(handle, ref pstSpatialDenoiseParam);
+        }
+
+        /// <summary>
+        /// LSC Calib
+        /// </summary>
+        /// <param name="pstLSCCalibParam">LSC Calib parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_LSCCalib_NET(ref MV_CC_LSC_CALIB_PARAM pstLSCCalibParam)
+        {
+            return MV_CC_LSCCalib(handle, ref pstLSCCalibParam);
+        }
+
+        /// <summary>
+        /// LSC Correct
+        /// </summary>
+        /// <param name="pstLSCCorrectParam">LSC Correct parameter structure</param>
+        /// <returns>Success, return MV_OK. Failure, return error code</returns>
+        public Int32 MV_CC_LSCCorrect_NET(ref MV_CC_LSC_CORRECT_PARAM pstLSCCorrectParam)
+        {
+            return MV_CC_LSCCorrect(handle, ref pstLSCCorrectParam);
+        }
+
         /// <summary>
         /// This interface is replaced by general interface
         /// </summary>
@@ -1720,6 +2162,11 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
             return MV_CC_GetPixelFormat(handle, ref pstValue);
         }
 
+        /// <summary>
+        /// Set PixelFormat
+        /// </summary>
+        /// <param name="nValue">PixelFormat</param>
+        /// <returns></returns>
         public Int32 MV_CC_SetPixelFormat_NET(UInt32 nValue)
         {
             return MV_CC_SetPixelFormat(handle, nValue);
@@ -1825,6 +2272,11 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
             return MV_CC_SetTriggerDelay(handle, fValue);
         }
 
+        /// <summary>
+        /// Get Trigger Source
+        /// </summary>
+        /// <param name="pstValue">Trigger Source</param>
+        /// <returns></returns>
         public Int32 MV_CC_GetTriggerSource_NET(ref MVCC_ENUMVALUE pstValue)
         {
             return MV_CC_GetTriggerSource(handle, ref pstValue);
@@ -2188,45 +2640,31 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         {
             return MV_GIGE_SetGevSCSP(handle, nPort);
         }
+
+        /// <summary>
+        /// This interface is abandoned, it is recommended to use the MV_CC_RegisterImageCallBackEx
+        /// </summary>
+        /// <param name="cbOutput"></param>
+        /// <param name="pUser"></param>
+        /// <returns></returns>
+        public Int32 MV_CC_RegisterImageCallBack_NET(cbOutputdelegate cbOutput, IntPtr pUser)
+        {
+            return MV_CC_RegisterImageCallBack(handle, cbOutput, pUser);
+        }
         #endregion
 
-        /// <summary>
-        /// Get Camera Handle
-        /// </summary>
-        /// <returns></returns>
-        public IntPtr GetCameraHandle()
-        {
-            return handle;
-        }
+        #region ch: 参数定义 | en: Paramera Define
 
-        /// <summary>
-        /// Byte array to struct
-        /// </summary>
-        /// <param name="bytes">Byte array</param>
-        /// <param name="type">Struct type</param>
-        /// <returns>Struct object</returns>
-        public static object ByteToStruct(Byte[] bytes, Type type)
-        {
-            int size = Marshal.SizeOf(type);
-            if (size > bytes.Length)
-            {
-                return null;
-            }
-
-            // 分配结构体内存空间
-            IntPtr structPtr = Marshal.AllocHGlobal(size);
-
-            // 将byte数组拷贝到分配好的内存空间
-            Marshal.Copy(bytes, 0, structPtr, size);
-
-            // 将内存空间转换为目标结构体
-            object obj = Marshal.PtrToStructure(structPtr, type);
-
-            // 释放内存空间
-            Marshal.FreeHGlobal(structPtr);
-
-            return obj;
-        }
+        #region ch采集卡类型 |en Interface type
+        /// <summary>ch GigE Vision采集卡 |en GigE Vision interface</summary>
+        public const Int32 MV_GIGE_INTERFACE = unchecked((Int32)0x00000001);
+        /// <summary>ch Camera Link采集卡 |en Camera Link interface</summary>
+        public const Int32 MV_CAMERALINK_INTERFACE = unchecked((Int32)0x00000004);
+        /// <summary>ch CoaXPress采集卡 |en CoaXPress interface</summary>
+        public const Int32 MV_CXP_INTERFACE = unchecked((Int32)0x00000008);
+        /// <summary>ch XoFLink采集卡 |en XoFLink interface</summary>
+        public const Int32 MV_XOF_INTERFACE = unchecked((Int32)0x00000010);
+        #endregion
 
         #region 设备类型定义
         /// <summary>Unknown Device Type, Reserved</summary>
@@ -2239,112 +2677,5767 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public const Int32 MV_USB_DEVICE = unchecked((Int32)0x00000004);
         /// <summary>CameraLink Device</summary>
         public const Int32 MV_CAMERALINK_DEVICE = unchecked((Int32)0x00000008);
+        /// <summary>Virtual GigE Device</summary>
+        public const Int32 MV_VIR_GIGE_DEVICE = unchecked((Int32)0x00000010);
+        /// <summary>Virtual USB Device</summary>
+        public const Int32 MV_VIR_USB_DEVICE = unchecked((Int32)0x00000020);
+        /// <summary>GenTL GigE Device</summary>
+        public const Int32 MV_GENTL_GIGE_DEVICE = unchecked((Int32)0x00000040);
+        /// <summary>GenTL CML Device</summary>
+        public const Int32 MV_GENTL_CAMERALINK_DEVICE = unchecked((Int32)0x00000080);
+        /// <summary>GenTL CXP Device</summary>
+        public const Int32 MV_GENTL_CXP_DEVICE = unchecked((Int32)0x00000100);
+        /// <summary>GenTL XOF Device</summary>
+        public const Int32 MV_GENTL_XOF_DEVICE = unchecked((Int32)0x00000200);
+
+        /// <summary>
+        /// ch:信息结构体的最大缓存 | en: Max buffer size of information structs
+        /// </summary>
+        public const Int32 INFO_MAX_BUFFER_SIZE = 64;
+
+        /// <summary>
+        /// 最大的相机数量
+        /// </summary>
+        public const Int32 MV_MAX_DEVICE_NUM = 256;
+
+        /// <summary>
+        /// ch:最大Interface数量 | en:Max num of interfaces
+        /// </summary>
+        public const Int32 MV_MAX_GENTL_IF_NUM = 256;
+
+        /// <summary>
+        /// ch:最大GenTL设备数量 | en:Max num of GenTL devices
+        /// </summary>
+        public const Int32 MV_MAX_GENTL_DEV_NUM = 256;
+
+        /// <summary>
+        /// XML节点描述最大长度
+        /// </summary>
+        public const Int32 MV_MAX_XML_DISC_STRLEN_C = 512;
+
+        /// <summary>
+        /// XML节点最大长度
+        /// </summary>
+        public const Int32 MV_MAX_XML_NODE_STRLEN_C = 64;
+
+        /// <summary>
+        /// XML节点最大数量
+        /// </summary>
+        public const Int32 MV_MAX_XML_NODE_NUM_C = 128;
+
+        /// <summary>
+        /// XML节点显示名最大数量
+        /// </summary>
+        public const Int32 MV_MAX_XML_SYMBOLIC_NUM = 64;
+
+        /// <summary>
+        /// string类型节点值的最大长度
+        /// </summary>
+        public const Int32 MV_MAX_XML_STRVALUE_STRLEN_C = 64;
+
+        /// <summary>
+        /// 最大父节点数
+        /// </summary>
+        public const Int32 MV_MAX_XML_PARENTS_NUM = 8;
+
+        /// <summary>
+        /// 最大节点描述长度
+        /// </summary>
+        public const Int32 MV_MAX_XML_SYMBOLIC_STRLEN_C = 64;
+
+        //  异常消息类型
+        /// <summary>
+        /// 设备断开连接
+        /// </summary>
+        public const Int32 MV_EXCEPTION_DEV_DISCONNECT = 0x00008001;
+
+        /// <summary>
+        /// SDK与驱动版本不匹配
+        /// </summary>
+        public const Int32 MV_EXCEPTION_VERSION_CHECK = 0x00008002;
+
+        //Event事件回调信息
+        /// <summary>
+        /// 相机Event事件名称最大长度
+        /// </summary>
+        public const Int32 MAX_EVENT_NAME_SIZE = 128;
+
+        /// <summary>最大枚举条目对应的符号长度</summary>
+        public const Int32 MV_MAX_SYMBOLIC_LEN = 64;
+
+        /// <summary>分时曝光时最多将源图像拆分的个数</summary>
+        public const Int32 MV_MAX_SPLIT_NUM = 8;
+
+        /// <summary>
+        /// ch:最大支持的采集卡数量 | en:The maximum number of Frame Grabber interface supported
+        /// </summary>
+        public const Int32 MV_MAX_INTERFACE_NUM = 64;
+
+        // ch GigEVision IP配置 |en GigEVision IP Configuration
+        /// <summary>
+        /// ch 静态 |en Static
+        /// </summary>
+        public const Int32 MV_IP_CFG_STATIC = 0x05000000;
+        /// <summary>
+        /// ch DHCP |en DHCP
+        /// </summary>
+        public const Int32 MV_IP_CFG_DHCP = 0x06000000;
+        /// <summary>
+        /// ch LLA  |en LLA
+        /// </summary>
+        public const Int32 MV_IP_CFG_LLA = 0x04000000;
+
+
+        // ch CameraLink波特率 |en CameraLink Baud Rates (CLUINT32)
+        /// <summary>
+        /// 9600
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_9600 = 0x00000001;
+        /// <summary>
+        /// 19200
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_19200 = 0x00000002;
+        /// <summary>
+        /// 38400
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_38400 = 0x00000004;
+        /// <summary>
+        /// 57600
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_57600 = 0x00000008;
+        /// <summary>
+        /// 115200
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_115200 = 0x00000010;
+        /// <summary>
+        /// 230400
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_230400 = 0x00000020;
+        /// <summary>
+        /// 460800
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_460800 = 0x00000040;
+        /// <summary>
+        /// 921600
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_921600 = 0x00000080;
+        /// <summary>
+        /// ch 最大值 |en Auto Max
+        /// </summary>
+        public const Int32 MV_CAML_BAUDRATE_AUTOMAX = 0x40000000;
+
+        // chinese 信息类型 |en Information Type
+        /// <summary>
+        /// ch 网络流量和丢包信息 |en Network traffic and packet loss information
+        /// </summary>
+        public const Int32 MV_MATCH_TYPE_NET_DETECT = 0x00000001;
+        /// <summary>
+        /// ch host接收到来自U3V设备的字节总数 |en The total number of bytes host received from U3V device
+        /// </summary>
+        public const Int32 MV_MATCH_TYPE_USB_DETECT = 0x00000002;
+
+        // 设备的访问模式
+        /// <summary>
+        /// ch独占权限，其他APP只允许读CCP寄存器 |en Exclusive authority, other APP is only allowed to read the CCP register
+        /// </summary>
+        public const Int32 MV_ACCESS_Exclusive = 1;
+        /// <summary>
+        /// ch 可以从5模式下抢占权限，然后以独占权限打开 |en You can seize the authority from the 5 mode, and then open with exclusive authority
+        /// </summary>
+        public const Int32 MV_ACCESS_ExclusiveWithSwitch = 2;
+        /// <summary>
+        /// ch 控制权限，其他APP允许读所有寄存器 |en Control authority, allows other APP reading all registers
+        /// </summary>
+        public const Int32 MV_ACCESS_Control = 3;
+        /// <summary>
+        /// ch 可以从5的模式下抢占权限，然后以控制权限打开 |en You can seize the authority from the 5 mode, and then open with control authority
+        /// </summary>
+        public const Int32 MV_ACCESS_ControlWithSwitch = 4;
+        /// <summary>
+        /// ch 以可被抢占的控制权限打开 |en Open with seized control authority
+        /// </summary>
+        public const Int32 MV_ACCESS_ControlSwitchEnable = 5;
+        /// <summary>
+        /// ch 可以从5的模式下抢占权限，然后以可被抢占的控制权限打开 |en You can seize the authority from the 5 mode, and then open with seized control authority
+        /// </summary>
+        public const Int32 MV_ACCESS_ControlSwitchEnableWithKey = 6;
+        /// <summary>
+        /// ch 读模式打开设备，适用于控制权限下 |en Open with read mode and is available under control authority
+        /// </summary>
+        public const Int32 MV_ACCESS_Monitor = 7;
+        #endregion
+
+        #region 相机参数结构体定义
+        /// <summary>
+        /// ch:采集卡信息列表 | en: Interface Information List
+        /// </summary>
+        public struct MV_INTERFACE_INFO_LIST
+        {
+            /// <summary>
+            /// ch:在线设备数量 | en:Online Interface Number
+            /// </summary>
+            public UInt32 nInterfaceNum;
+
+            /// <summary>
+            /// ch:支持最多64个设备 | en:Support up to 64 Interfaces
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_INTERFACE_NUM)]
+            public IntPtr[] pInterfaceInfo;
+        };
+
+        /// <summary>
+        /// ch:采集卡信息 | en: Interface information
+        /// </summary>
+        public struct MV_INTERFACE_INFO
+        {
+            /// <summary>
+            /// ch: 采集卡类型; 低16位有效: bits(0~2)代表功能, bits(3~7)代表相机, bits(8-15)代表总线| en: Interface type
+            /// </summary>
+            public UInt32 nTLayerType;
+            /// <summary>
+            /// ch: 采集卡的PCIE插槽信息 | en: PCIe slot information of interface
+            /// </summary>
+            public UInt32 nPCIEInfo;
+            /// <summary>
+            /// ch: 采集卡ID  | en: Interface ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chInterfaceID;
+            /// <summary>
+            /// ch 显示名称 | en: Display name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chDisplayName;
+            /// <summary>
+            /// ch 序列号 |en: Serial number
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chSerialNumber;
+            /// <summary>
+            /// ch 型号 | en: model name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chModelName;
+            /// <summary>
+            /// ch: 厂商 |en: manufacturer name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chManufacturer;
+            /// <summary>
+            /// ch: 版本号| en: device version
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chDeviceVersion;
+            /// <summary>
+            /// ch: 自定义名称 |en: user defined name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+            /// <summary>
+            /// ch 保留字段 | en Reserved
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+            public UInt32[] nReserved;
+        };
+
+
+
+        /// <summary>
+        /// 排序方式
+        /// </summary>
+        public enum MV_SORT_METHOD
+        {
+            /// <summary>
+            /// 按序列号排序
+            /// </summary>
+            SORTMETHOD_SERIALNUMBER = 0,
+
+            /// <summary>
+            /// 按用户自定义名字排序
+            /// </summary>
+            SORTMETHOD_USERID = 1,
+
+            /// <summary>
+            /// 按当前IP地址排序（升序）
+            /// </summary>
+            SORTMETHOD_CURRENTIP_ASC = 2,
+
+            /// <summary>
+            /// 按当前IP地址排序（降序）
+            /// </summary>
+            SORTMETHOD_CURRENTIP_DESC = 3,
+        };
+
+        /// <summary>
+        /// ch: GigE设备信息 | en: GigE device information
+        /// </summary>
+        public struct MV_GIGE_DEVICE_INFO
+        {
+            /// <summary>
+            /// IP 配置选项
+            /// </summary>
+            public UInt32 nIpCfgOption;
+            /// <summary>
+            /// IP configuration:bit31-static bit30-dhcp bit29-lla
+            /// </summary>
+            public UInt32 nIpCfgCurrent;
+            /// <summary>
+            /// curtent ip
+            /// </summary>
+            public UInt32 nCurrentIp;
+            /// <summary>
+            /// curtent subnet mask
+            /// </summary>
+            public UInt32 nCurrentSubNetMask;
+            /// <summary>
+            /// current gateway
+            /// </summary>
+            public UInt32 nDefultGateWay;
+            /// <summary>
+            /// 制造商名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chManufacturerName;
+            /// <summary>
+            /// 型号名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chModelName;
+            /// <summary>
+            /// 设备版本信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chDeviceVersion;
+            /// <summary>
+            /// 制造商特殊信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 48)]
+            public String chManufacturerSpecificInfo;
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public String chSerialNumber;
+            /// <summary>
+            /// 用户自定义名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public String chUserDefinedName;
+            /// <summary>
+            /// 网口IP地址
+            /// </summary>
+            public UInt32 nNetExport;
+            /// <summary>
+            /// 预留
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch: GigE设备信息 | en: GigE device information
+        /// </summary>
+        public struct MV_GIGE_DEVICE_INFO_EX
+        {
+            /// <summary>
+            /// IP 配置选项
+            /// </summary>
+            public UInt32 nIpCfgOption;
+            /// <summary>
+            /// IP configuration:bit31-static bit30-dhcp bit29-lla
+            /// </summary>
+            public UInt32 nIpCfgCurrent;
+            /// <summary>
+            /// curtent ip
+            /// </summary>
+            public UInt32 nCurrentIp;
+            /// <summary>
+            /// curtent subnet mask
+            /// </summary>
+            public UInt32 nCurrentSubNetMask;
+            /// <summary>
+            /// current gateway
+            /// </summary>
+            public UInt32 nDefultGateWay;
+            /// <summary>
+            /// 制造商名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chManufacturerName;
+            /// <summary>
+            /// 型号名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chModelName;
+            /// <summary>
+            /// 设备版本信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public String chDeviceVersion;
+            /// <summary>
+            /// 制造商特殊信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 48)]
+            public String chManufacturerSpecificInfo;
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public String chSerialNumber;
+            /// <summary>
+            /// 用户自定义名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public Byte[] chUserDefinedName;
+            /// <summary>
+            /// 网口IP地址
+            /// </summary>
+            public UInt32 nNetExport;
+            /// <summary>
+            /// 预留
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:USB3 设备信息 | en:USB3 device information
+        /// </summary>
+        public struct MV_USB3_DEVICE_INFO
+        {
+            /// <summary>
+            /// 控制输入端点
+            /// </summary>
+            public Byte CrtlInEndPoint;
+            /// <summary>
+            /// 控制输出端点
+            /// </summary>
+            public Byte CrtlOutEndPoint;
+            /// <summary>
+            /// 流端点
+            /// </summary>
+            public Byte StreamEndPoint;
+            /// <summary>
+            /// 事件端点
+            /// </summary>
+            public Byte EventEndPoint;
+            /// <summary>
+            /// 供应商ID号
+            /// </summary>
+            public UInt16 idVendor;
+            /// <summary>
+            /// 产品ID号
+            /// </summary>
+            public UInt16 idProduct;
+            /// <summary>
+            /// 设备索引号
+            /// </summary>
+            public UInt32 nDeviceNumber;
+            /// <summary>
+            /// 设备GUID号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceGUID;
+            /// <summary>
+            /// 供应商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+            /// <summary>
+            /// 型号名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// 家族名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chFamilyName;
+            /// <summary>
+            /// 设备版本号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// 制造商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerName;
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// 用户自定义名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chUserDefinedName;
+            /// <summary>
+            /// 支持的USB协议
+            /// </summary>
+            public UInt32 nbcdUSB;
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:USB3 设备信息 | en:USB3 device information
+        /// </summary>
+        public struct MV_USB3_DEVICE_INFO_EX
+        {
+            /// <summary>
+            /// 控制输入端点
+            /// </summary>
+            public Byte CrtlInEndPoint;
+            /// <summary>
+            /// 控制输出端点
+            /// </summary>
+            public Byte CrtlOutEndPoint;
+            /// <summary>
+            /// 流端点
+            /// </summary>
+            public Byte StreamEndPoint;
+            /// <summary>
+            /// 事件端点
+            /// </summary>
+            public Byte EventEndPoint;
+            /// <summary>
+            /// 供应商ID号
+            /// </summary>
+            public UInt16 idVendor;
+            /// <summary>
+            /// 产品ID号
+            /// </summary>
+            public UInt16 idProduct;
+            /// <summary>
+            /// 设备索引号
+            /// </summary>
+            public UInt32 nDeviceNumber;
+            /// <summary>
+            /// 设备GUID号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceGUID;
+            /// <summary>
+            /// 供应商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+            /// <summary>
+            /// 型号名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// 家族名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chFamilyName;
+            /// <summary>
+            /// 设备版本号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// 制造商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerName;
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// 用户自定义名字
+            /// </summary>   
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+            /// <summary>
+            /// 支持的USB协议
+            /// </summary>
+            public UInt32 nbcdUSB;
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:CamLink设备信息 | en:CamLink device information
+        /// </summary>
+        public struct MV_CamL_DEV_INFO
+        {
+            /// <summary>
+            /// 端口号ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chPortID;
+            /// <summary>
+            /// 模型名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// 家族名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chFamilyName;
+            /// <summary>
+            /// 设备版本信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// 制造商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerName;
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 38)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:采集卡Camera Link相机信息 | en:Camera Link device information on frame grabber
+        /// </summary>
+        public struct MV_CML_DEVICE_INFO
+        {
+            /// <summary>
+            /// ch 采集卡ID |en Interface ID of Frame Grabber
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chInterfaceID;
+            /// <summary>
+            /// ch 供应商名字 |en Vendor name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+            /// <summary>
+            /// ch 型号名字 |en Model name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// ch 厂商信息 |en Manufacturer information
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerInfo;
+            /// <summary>
+            /// ch 相机版本 |en Device version
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// ch 序列号 |en Serial number
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// ch 用户自定义名字 |en User defined name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+
+            /// <summary>
+            /// ch 相机ID |en Device ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceID;
+
+            /// <summary>
+            /// ch 保留字段 |en Reserved
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
+            public UInt32[] nReserved;                                          // 保留字节
+        };
+
+        /// <summary>
+        /// ch:CoaXPress相机信息 | en:CoaXPress device information
+        /// </summary>
+        public struct MV_CXP_DEVICE_INFO
+        {
+            /// <summary>
+            /// ch 采集卡ID |en Interface ID of Frame Grabber
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chInterfaceID;
+            /// <summary>
+            /// ch 供应商名字 |en Vendor name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+            /// <summary>
+            /// ch 型号名字 |en Model name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// ch 厂商信息 |en Manufacturer information
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerInfo;
+            /// <summary>
+            /// ch 相机版本 |en Device version
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// ch 序列号 |en Serial number
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// ch 用户自定义名字 |en User defined name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+            /// <summary>
+            /// ch 相机ID |en Device ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceID;
+            /// <summary>
+            /// ch 保留字段 |en Reserved
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
+            public UInt32[] nReserved;                                          // 保留字节
+        };
+
+        /// <summary>
+        /// ch:XoFLink相机信息 | en:XoFLink device information
+        /// </summary>
+        public struct MV_XOF_DEVICE_INFO
+        {
+            /// <summary>
+            /// ch 采集卡ID |en Interface ID of Frame Grabber
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chInterfaceID;
+            /// <summary>
+            /// ch 供应商名字 |en Vendor name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+            /// <summary>
+            /// ch 型号名字 |en Model name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+            /// <summary>
+            /// ch 厂商信息 |en Manufacturer information
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chManufacturerInfo;
+            /// <summary>
+            /// ch 相机版本 |en Device version
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+            /// <summary>
+            /// ch 序列号 |en Serial number
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+            /// <summary>
+            /// ch 用户自定义名字 |en User defined name
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+            /// <summary>
+            /// ch 相机ID |en Device ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceID;
+            /// <summary>
+            /// ch 保留字段 |en Reserved
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)]
+            public UInt32[] nReserved;                                          // 保留字节
+        };
+
+        /// <summary>
+        /// ch:设备信息 | en:Device information
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]   //结构体顺序布局
+        public struct MV_CC_DEVICE_INFO
+        {
+            /// <summary>
+            /// 主版本号
+            /// </summary>
+            public UInt16 nMajorVer;
+
+            /// <summary>
+            /// 次版本号
+            /// </summary>
+            public UInt16 nMinorVer;
+
+            /// <summary>
+            /// MAC高地址
+            /// </summary>
+            public UInt32 nMacAddrHigh;
+
+            /// <summary>
+            /// MAC低地址
+            /// </summary>
+            public UInt32 nMacAddrLow;
+
+            /// <summary>
+            /// 设备传输层协议类型，e.g. MV_GIGE_DEVICE
+            /// </summary>
+            public UInt32 nTLayerType;
+
+            /// <summary>
+            /// ch 设备类型信息 | en Device Type Info
+            /// </summary>
+            public UInt32 nDevTypeInfo;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public UInt32[] nReserved;
+
+            /// <summary>
+            /// ch:特定类型的设备信息 | en:Special devcie information
+            /// </summary>
+            [StructLayout(LayoutKind.Explicit, Size = 540)]
+            public struct SPECIAL_INFO
+            {
+                /// <summary>
+                /// GigE
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 216)]
+                public Byte[] stGigEInfo;
+
+                /// <summary>
+                /// Camera Link
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 536)]
+                public Byte[] stCamLInfo;
+                /// <summary>
+                /// Usb
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 540)]
+                public Byte[] stUsb3VInfo;
+                /// <summary>
+                /// CML
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 540)]
+                public Byte[] stCMLInfo;
+                /// <summary>
+                /// CXP
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 540)]
+                public Byte[] stCXPInfo;
+                /// <summary>
+                /// XOF
+                /// </summary>
+                [FieldOffset(0)]
+                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 540)]
+                public Byte[] stXoFInfo;
+            };
+
+            /// <summary>
+            /// 设备类型
+            /// </summary>
+            public SPECIAL_INFO SpecialInfo;
+
+            /// <summary>
+            /// 构造函数
+            /// </summary>
+            /// <param name="nAnyNum">输入任意数，因为不接受无参构造函数</param>
+            public MV_CC_DEVICE_INFO(UInt32 nAnyNum)
+            {
+                nMajorVer = 0;
+                nMinorVer = 0;
+                nMacAddrHigh = 0;
+                nMacAddrLow = 0;
+                nTLayerType = 0;
+                nDevTypeInfo = 0;
+                nReserved = new uint[3];
+                SpecialInfo.stGigEInfo = new byte[216];
+                SpecialInfo.stCamLInfo = new byte[536];
+                SpecialInfo.stUsb3VInfo = new byte[540];
+                SpecialInfo.stCMLInfo = new byte[540];
+                SpecialInfo.stCXPInfo = new byte[540];
+                SpecialInfo.stXoFInfo = new byte[540];
+            }
+        };
+
+        /// <summary>
+        /// 相机列表
+        /// </summary>
+        public struct MV_CC_DEVICE_INFO_LIST
+        {
+            /// <summary>
+            /// 在线设备数量
+            /// </summary>
+            public UInt32 nDeviceNum;
+
+            /// <summary>
+            /// 支持最多256个设备
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_DEVICE_NUM)]
+            public IntPtr[] pDeviceInfo;
+        };
+
+        /// <summary>
+        /// ch:通过GenTL枚举到的Interface信息 | en:Interface Information with GenTL
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MV_GENTL_IF_INFO
+        {
+            /// <summary>
+            /// GenTL接口ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chInterfaceID;
+
+            /// <summary>
+            /// 传输层类型
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chTLType;
+
+            /// <summary>
+            /// 设备显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public String chDisplayName;
+
+            /// <summary>
+            /// GenTL的cti文件索引
+            /// </summary>
+            public UInt32 nCtiIndex;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:通过GenTL枚举到的设备信息列表 | en:Interface Information List with GenTL
+        /// </summary>
+        public struct MV_GENTL_IF_INFO_LIST
+        {
+            /// <summary>
+            /// ch:在线设备数量 | en:Online Interface Number
+            /// </summary>
+            public UInt32 nInterfaceNum;
+
+            /// <summary>
+            /// ch:支持最多256个设备 | en:Support up to 256 Interfaces
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_GENTL_IF_NUM)]
+            public IntPtr[] pIFInfo;
+        };
+
+        /// <summary>
+        /// ch:通过GenTL枚举到的设备信息 | en:Device Information discovered by with GenTL
+        /// </summary>
+        public struct MV_GENTL_DEV_INFO
+        {
+            /// <summary>
+            /// 采集卡ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chInterfaceID;
+
+            /// <summary>
+            /// 设备ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceID;
+
+            /// <summary>
+            /// 供应商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+
+            /// <summary>
+            /// 模型名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+
+            /// <summary>
+            /// 传输类型
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chTLType;
+
+            /// <summary>
+            /// 显示名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDisplayName;
+
+            /// <summary>
+            /// 用户自定义名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chUserDefinedName;
+
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+
+            /// <summary>
+            /// 设备版本信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+
+            /// <summary>
+            /// cti文件序号
+            /// </summary>
+            public UInt32 nCtiIndex;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:通过GenTL枚举到的设备信息 | en:Device Information discovered by with GenTL
+        /// </summary>
+        public struct MV_GENTL_DEV_INFO_EX
+        {
+            /// <summary>
+            /// 采集卡ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chInterfaceID;
+
+            /// <summary>
+            /// 设备ID
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceID;
+
+            /// <summary>
+            /// 供应商名字
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chVendorName;
+
+            /// <summary>
+            /// 模型名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chModelName;
+
+            /// <summary>
+            /// 传输类型
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chTLType;
+
+            /// <summary>
+            /// 显示名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDisplayName;
+
+            /// <summary>
+            /// 用户自定义名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public Byte[] chUserDefinedName;
+
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chSerialNumber;
+
+            /// <summary>
+            /// 设备版本信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
+            public string chDeviceVersion;
+
+            /// <summary>
+            /// cti文件序号
+            /// </summary>
+            public UInt32 nCtiIndex;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:GenTL设备列表 | en:GenTL devices list
+        /// </summary>
+        public struct MV_GENTL_DEV_INFO_LIST
+        {
+            /// <summary>
+            /// 在线设备数量
+            /// </summary>
+            public UInt32 nDeviceNum;
+
+            /// <summary>
+            /// 支持最多256个设备
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_GENTL_DEV_NUM)]
+            public IntPtr[] pDeviceInfo;
+        };
+
+        /// <summary>
+        /// Net Trans Info
+        /// </summary>
+        public struct MV_NETTRANS_INFO
+        {
+            /// <summary>
+            /// 已接收数据大小  [统计StartGrabbing和StopGrabbing之间的数据量]
+            /// </summary>
+            public Int64 nReviceDataSize;
+
+            /// <summary>
+            /// 丢帧数量
+            /// </summary>
+            public Int32 nThrowFrameCount;
+
+            /// <summary>
+            /// 接收帧数
+            /// </summary>
+            public UInt32 nNetRecvFrameCount;
+
+            /// <summary>
+            /// 请求重发包数
+            /// </summary>
+            public Int64 nRequestResendPacketCount;
+
+            /// <summary>
+            /// 重发包数
+            /// </summary>
+            public Int64 nResendPacketCount;
+        };
+
+        /// <summary>
+        /// Frame Out Info
+        /// </summary>
+        public struct MV_FRAME_OUT_INFO
+        {
+            /// <summary>
+            /// 图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// 图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// 像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// 帧号
+            /// </summary>
+            public UInt32 nFrameNum;
+
+            /// <summary>
+            /// 时间戳高32位
+            /// </summary>
+            public UInt32 nDevTimeStampHigh;
+
+            /// <summary>
+            /// 时间戳低32位
+            /// </summary>
+            public UInt32 nDevTimeStampLow;
+
+            /// <summary>
+            /// 保留，8字节对齐
+            /// </summary>
+            public UInt32 nReserved0;
+
+            /// <summary>
+            /// 主机生成的时间戳
+            /// </summary>
+            public Int64 nHostTimeStamp;
+
+            /// <summary>
+            /// 帧数据大小
+            /// </summary>
+            public UInt32 nFrameLen;
+
+            /// <summary>
+            /// 丢包数量
+            /// </summary>
+            public UInt32 nLostPacket;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// Chunk数据信息
+        /// </summary>
+        public struct MV_CHUNK_DATA_CONTENT
+        {
+            /// <summary>
+            /// Chunk数据
+            /// </summary>
+            public IntPtr pChunkData;
+
+            /// <summary>
+            /// ChunkID
+            /// </summary>
+            public UInt32 nChunkID;
+
+            /// <summary>
+            /// Chunk大小
+            /// </summary>
+            public UInt32 nChunkLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        };
+        /// <summary>
+        /// Frame Out Info Ex
+        /// </summary>
+        public struct MV_FRAME_OUT_INFO_EX
+        {
+            /// <summary>
+            /// 图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// 图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// 像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// 帧号
+            /// </summary>
+            public UInt32 nFrameNum;
+
+            /// <summary>
+            /// 时间戳高32位
+            /// </summary>
+            public UInt32 nDevTimeStampHigh;
+
+            /// <summary>
+            /// 时间戳低32位
+            /// </summary>
+            public UInt32 nDevTimeStampLow;
+
+            /// <summary>
+            /// 保留，8字节对齐
+            /// </summary>
+            public UInt32 nReserved0;
+
+            /// <summary>
+            /// 主机生成的时间戳
+            /// </summary>
+            public Int64 nHostTimeStamp;
+
+            /// <summary>
+            /// Frame大小
+            /// </summary>
+            public UInt32 nFrameLen;
+
+            // 以下为chunk新增水印信息
+            // 设备水印时标
+            /// <summary>
+            /// 秒数
+            /// </summary>
+            public UInt32 nSecondCount;
+
+            /// <summary>
+            /// 周期数
+            /// </summary>
+            public UInt32 nCycleCount;
+
+            /// <summary>
+            /// 周期偏移量
+            /// </summary>
+            public UInt32 nCycleOffset;
+
+            /// <summary>
+            /// 增益
+            /// </summary>
+            public Single fGain;
+
+            /// <summary>
+            /// 曝光时间
+            /// </summary>
+            public Single fExposureTime;
+
+            /// <summary>
+            /// 平均亮度
+            /// </summary>
+            public UInt32 nAverageBrightness;
+
+            // 白平衡相关
+            /// <summary>
+            /// Red
+            /// </summary>
+            public UInt32 nRed;
+
+            /// <summary>
+            /// Green
+            /// </summary>
+            public UInt32 nGreen;
+
+            /// <summary>
+            /// Blue
+            /// </summary>
+            public UInt32 nBlue;
+
+            /// <summary>
+            /// 帧计数器
+            /// </summary>
+            public UInt32 nFrameCounter;
+
+            /// <summary>
+            /// 触发计数
+            /// </summary>
+            public UInt32 nTriggerIndex;
+
+            //Line 输入/输出
+            /// <summary>
+            /// 输入
+            /// </summary>
+            public UInt32 nInput;
+
+            /// <summary>
+            /// 输出
+            /// </summary>
+            public UInt32 nOutput;
+
+            // ROI区域
+            /// <summary>
+            /// 水平偏移量
+            /// </summary>
+            public UInt16 nOffsetX;
+
+            /// <summary>
+            /// 垂直偏移量
+            /// </summary>
+            public UInt16 nOffsetY;
+
+            /// <summary>
+            /// Chunk宽度
+            /// </summary>
+            public UInt16 nChunkWidth;
+
+            /// <summary>
+            /// Chunk高度
+            /// </summary>
+            public UInt16 nChunkHeight;
+
+            /// <summary>
+            /// 丢包数
+            /// </summary>
+            public UInt32 nLostPacket;
+
+            /// <summary>
+            /// 为解析的Chunk数量
+            /// </summary>
+            public UInt32 nUnparsedChunkNum;
+
+            /// <summary>
+            /// 为解析的Chunk列表
+            /// </summary>
+            [StructLayout(LayoutKind.Explicit)]
+            public struct UNPARSED_CHUNK_LIST
+            {
+                /// <summary>
+                /// 为解析的Chunk内容
+                /// </summary>
+                [FieldOffset(0)]
+                public IntPtr pUnparsedChunkContent;
+
+                /// <summary>
+                /// 对齐结构体，无实际用途
+                /// </summary>
+                [FieldOffset(0)]
+                public Int64 nAligning;
+            }
+
+            /// <summary>
+            /// 为解析的Chunk列表
+            /// </summary>
+            public UNPARSED_CHUNK_LIST UnparsedChunkList;
+
+            /// <summary>
+            /// 图像宽扩展
+            /// </summary>
+            public UInt32 nExtendWidth;
+
+            /// <summary>
+            /// 图像高扩展
+            /// </summary>
+            public UInt32 nExtendHeight;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 34)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// 输出帧信息
+        /// </summary>
+        public struct MV_FRAME_OUT
+        {
+            /// <summary>
+            /// 帧数据地址
+            /// </summary>
+            public IntPtr pBufAddr;
+
+            /// <summary>
+            /// 帧信息
+            /// </summary>
+            public MV_FRAME_OUT_INFO_EX stFrameInfo;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// 取流策略
+        /// </summary>
+        public enum MV_GRAB_STRATEGY
+        {
+            /// <summary>
+            /// 从旧到新一帧一帧的获取图像（默认为该策略）
+            /// </summary>
+            MV_GrabStrategy_OneByOne = 0,
+
+            /// <summary>
+            /// 获取列表中最新的一帧图像（同时清除列表中的其余图像）
+            /// </summary>
+            MV_GrabStrategy_LatestImagesOnly = 1,
+
+            /// <summary>
+            /// 获取列表中最新的图像，个数由OutputQueueSize决定，范围为1-ImageNodeNum，设置成1等同于LatestImagesOnly，设置成ImageNodeNum等同于OneByOne
+            /// </summary>
+            MV_GrabStrategy_LatestImages = 2,
+
+            /// <summary>
+            /// 等待下一帧图像
+            /// </summary>
+            MV_GrabStrategy_UpcomingImage = 3,
+        };
+
+        /// <summary>
+        /// 显示帧信息
+        /// </summary>
+        public struct MV_DISPLAY_FRAME_INFO
+        {
+            /// <summary>
+            /// 显示窗口的句柄
+            /// </summary>
+            public IntPtr hWnd;
+
+            /// <summary>
+            /// 显示的帧数据
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// 显示的帧数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// 图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// 图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// 像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// 显示帧信息
+        /// </summary>
+        public struct MV_DISPLAY_FRAME_INFO_EX
+        {
+            /// <summary>
+            /// 图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// 图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// 像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// 显示的帧数据
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// 显示的帧数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// ch:保存3D数据格式 | en:Save 3D file
+        /// </summary>
+        public enum MV_SAVE_POINT_CLOUD_FILE_TYPE
+        {
+            /// <summary>
+            /// 未定义数据格式
+            /// </summary>
+            MV_PointCloudFile_Undefined = 0,
+
+            /// <summary>
+            /// PLY数据格式
+            /// </summary>
+            MV_PointCloudFile_PLY = 1,
+
+            /// <summary>
+            /// CSV数据格式
+            /// </summary>
+            MV_PointCloudFile_CSV = 2,
+
+            /// <summary>
+            /// OBJ数据格式
+            /// </summary>
+            MV_PointCloudFile_OBJ = 3,
+        };
+
+        /// <summary>
+        /// 保存的点阵参数
+        /// </summary>
+        public struct MV_SAVE_POINT_CLOUD_PARAM
+        {
+            /// <summary>
+            /// [IN]     每一行点的数量
+            /// </summary>
+            public UInt32 nLinePntNum;
+
+            /// <summary>
+            /// [IN]     行数
+            /// </summary>
+            public UInt32 nLineNum;
+
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enSrcPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小(nLinePntNum * nLineNum * (16*3 + 4) + 2048)
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// 保存的点阵文件类型
+            /// </summary>
+            public MV_SAVE_POINT_CLOUD_FILE_TYPE enPointCloudFileType;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 保存的图像格式
+        /// </summary>
+        public enum MV_SAVE_IAMGE_TYPE
+        {
+            /// <summary>
+            /// 未定义类型
+            /// </summary>
+            MV_Image_Undefined = 0,
+
+            /// <summary>
+            /// Bmp图像格式
+            /// </summary>
+            MV_Image_Bmp = 1,
+
+            /// <summary>
+            /// Jpeg图像格式
+            /// </summary>
+            MV_Image_Jpeg = 2,
+
+            /// <summary>
+            /// Png图像格式
+            /// </summary>
+            MV_Image_Png = 3,
+
+            /// <summary>
+            /// Tif图像格式
+            /// </summary>
+            MV_Image_Tif = 4,
+        };
+
+        /// <summary>
+        /// 保存的图像参数
+        /// </summary>
+        public struct MV_SAVE_IMAGE_PARAM
+        {
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// [OUT]    输出图片缓存
+            /// </summary>
+            public IntPtr pImageBuffer;
+
+            /// <summary>
+            /// [OUT]    输出图片大小
+            /// </summary>
+            public UInt32 nImageLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nBufferSize;
+
+            /// <summary>
+            /// [IN]     输出图片格式
+            /// </summary>
+            public MV_SAVE_IAMGE_TYPE enImageType;
+        };
+
+        /// <summary>
+        /// 保存的图像参数
+        /// </summary>
+        public struct MV_SAVE_IMAGE_PARAM_EX2
+        {
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// [OUT]    输出图片缓存
+            /// </summary>
+            public IntPtr pImageBuffer;
+
+            /// <summary>
+            /// [OUT]    输出图片大小
+            /// </summary>
+            public UInt32 nImageLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nBufferSize;
+
+            /// <summary>
+            /// [IN]     输出图片格式
+            /// </summary>
+            public MV_SAVE_IAMGE_TYPE enImageType;
+
+            /// <summary>
+            /// [IN]     编码质量, (50-99]
+            /// </summary>
+            public UInt32 nJpgQuality;
+
+            /// <summary>
+            /// [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
+            /// </summary>
+            public UInt32 iMethodValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public UInt32[] nReserved;
+        };
+
+        /// <summary>
+        /// 保存的图像信息扩展
+        /// </summary>
+        public struct MV_SAVE_IMAGE_PARAM_EX3
+        {
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [OUT]    输出图片缓存
+            /// </summary>
+            public IntPtr pImageBuffer;
+
+            /// <summary>
+            /// [OUT]    输出图片大小
+            /// </summary>
+            public UInt32 nImageLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nBufferSize;
+
+            /// <summary>
+            /// [IN]     输出图片格式
+            /// </summary>
+            public MV_SAVE_IAMGE_TYPE enImageType;
+
+            /// <summary>
+            /// [IN]     编码质量, (50-99]
+            /// </summary>
+            public UInt32 nJpgQuality;
+
+            /// <summary>
+            /// [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
+            /// </summary>
+            public UInt32 iMethodValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 保存图像到文件的参数
+        /// </summary>
+        public struct MV_SAVE_IMG_TO_FILE_PARAM
+        {
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// [IN]     输入图片格式
+            /// </summary>
+            public MV_SAVE_IAMGE_TYPE enImageType;
+
+            /// <summary>
+            /// [IN]     编码质量, (0-100]
+            /// </summary>
+            public UInt32 nQuality;
+
+            /// <summary>
+            /// [IN]     输入文件路径
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+            public string pImagePath;
+
+            /// <summary>
+            /// [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
+            /// </summary>
+            public UInt32 iMethodValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 保存图像到文件信息扩展
+        /// </summary>
+        public struct MV_SAVE_IMG_TO_FILE_PARAM_EX
+        {
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// [IN]     输入图片格式
+            /// </summary>
+            public MV_SAVE_IAMGE_TYPE enImageType;
+
+            /// <summary>
+            /// [IN]     输入文件路径
+            /// </summary>
+            public string pImagePath;
+
+            /// <summary>
+            /// [IN]     编码质量, (0-100]
+            /// </summary>
+            public UInt32 nQuality;
+
+            /// <summary>
+            /// [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
+            /// </summary>
+            public UInt32 iMethodValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 旋转角度
+        /// </summary>
+        public enum MV_IMG_ROTATION_ANGLE
+        {
+            /// <summary>
+            /// 旋转90度
+            /// </summary>
+            MV_IMAGE_ROTATE_90 = 1,
+
+            /// <summary>
+            /// 旋转180度
+            /// </summary>
+            MV_IMAGE_ROTATE_180 = 2,
+
+            /// <summary>
+            /// 旋转270度
+            /// </summary>
+            MV_IMAGE_ROTATE_270 = 3,
+        }
+
+        /// <summary>
+        /// 旋转图像参数
+        /// </summary>
+        public struct MV_CC_ROTATE_IMAGE_PARAM
+        {
+            /// <summary>
+            /// [IN]     像素格式(仅支持Mono8/RGB24/BGR24)
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN][OUT]     图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN][OUT]     图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [OUT]    输出图片缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [OUT]    输出图片大小
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [IN]     旋转角度
+            /// </summary>
+            public MV_IMG_ROTATION_ANGLE enRotationAngle;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 图像翻转类型
+        /// </summary>
+        public enum MV_IMG_FLIP_TYPE
+        {
+            /// <summary>
+            /// 垂直方向翻转
+            /// </summary>
+            MV_FLIP_VERTICAL = 1,
+
+            /// <summary>
+            /// 水平方向翻转
+            /// </summary>
+            MV_FLIP_HORIZONTAL = 2,
+        }
+
+        /// <summary>
+        /// 翻转图像参数
+        /// </summary>
+        public struct MV_CC_FLIP_IMAGE_PARAM
+        {
+            /// <summary>
+            /// [IN]     像素格式(仅支持Mono8/RGB24/BGR24)
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [OUT]    输出图片缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [OUT]    输出图片大小
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [IN]     翻转类型
+            /// </summary>
+            public MV_IMG_FLIP_TYPE enFlipType;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 像素转换参数
+        /// </summary>
+        public struct MV_PIXEL_CONVERT_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// [IN]     源像素格式
+            /// </summary>
+            public MvGvspPixelType enSrcPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [IN]     目标像素格式
+            /// </summary>
+            public MvGvspPixelType enDstPixelType;
+
+            /// <summary>
+            /// [OUT]    输出数据缓存
+            /// </summary>
+            public IntPtr pDstBuffer;
+
+            /// <summary>
+            /// [OUT]    输出数据大小
+            /// </summary>
+            public UInt32 nDstLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufferSize;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nRes;
+        }
+
+        /// <summary>
+        /// 图像像素转换信息扩展
+        /// </summary>
+        public struct MV_CC_PIXEL_CONVERT_PARAM_EX
+        {
+            /// <summary>
+            /// [IN]     图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     源像素格式
+            /// </summary>
+            public MvGvspPixelType enSrcPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [IN]     目标像素格式
+            /// </summary>
+            public MvGvspPixelType enDstPixelType;
+
+            /// <summary>
+            /// [OUT]    输出数据缓存
+            /// </summary>
+            public IntPtr pDstBuffer;
+
+            /// <summary>
+            /// [OUT]    输出数据大小
+            /// </summary>
+            public UInt32 nDstLen;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufferSize;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nRes;
+        }
+
+        /// <summary>
+        /// Gamma类型
+        /// </summary>
+        public enum MV_CC_GAMMA_TYPE
+        {
+            /// <summary>
+            /// 不启用
+            /// </summary>
+            MV_CC_GAMMA_TYPE_NONE = 0,
+
+            /// <summary>
+            /// GAMMA值
+            /// </summary>
+            MV_CC_GAMMA_TYPE_VALUE = 1,
+
+            /// <summary>
+            /// GAMMA曲线，8位需要的长度：256*sizeof(unsigned char)
+            /// 10位需要的长度：1024*sizeof(unsigned short)
+            /// 12位需要的长度：4096*sizeof(unsigned short)
+            /// 16位需要的长度：65536*sizeof(unsigned short)
+            /// </summary>
+            MV_CC_GAMMA_TYPE_USER_CURVE = 2,
+
+            /// <summary>
+            /// 线性RGB转非线性RGB
+            /// </summary>
+            MV_CC_GAMMA_TYPE_LRGB2SRGB = 3,
+
+            /// <summary>
+            /// 非线性RGB转线性RGB
+            /// </summary>
+            MV_CC_GAMMA_TYPE_SRGB2LRGB = 4,
+        }
+
+
+        /// <summary>
+        /// Gamma参数
+        /// </summary>
+        public struct MV_CC_GAMMA_PARAM
+        {
+            /// <summary>
+            /// [IN]     Gamma类型
+            /// </summary>
+            public MV_CC_GAMMA_TYPE enGammaType;
+
+            /// <summary>
+            /// [IN]     Gamma值
+            /// </summary>
+            public Single fGammaValue;
+
+            /// <summary>
+            /// [IN]     Gamma曲线缓存
+            /// </summary>
+            public IntPtr pGammaCurveBuf;
+
+            /// <summary>
+            /// [IN]     Gamma曲线长度
+            /// </summary>
+            public UInt32 nGammaCurveBufLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// CCM参数
+        /// </summary>
+        public struct MV_CC_CCM_PARAM
+        {
+            /// <summary>
+            /// [IN]     是否启用CCM
+            /// </summary>
+            public Boolean bCCMEnable;
+
+            /// <summary>
+            /// [IN]     CCM矩阵(-8192~8192)
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
+            public Int32[] nCCMat;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// CCM参数
+        /// </summary>
+        public struct MV_CC_CCM_PARAM_EX
+        {
+            /// <summary>
+            /// [IN]     是否启用CCM
+            /// </summary>
+            public Boolean bCCMEnable;
+
+            /// <summary>
+            /// [IN]     量化3x3矩阵
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
+            public Int32[] nCCMat;
+
+            /// <summary>
+            /// [IN]     量化系数（2的整数幂）
+            /// </summary>
+            public UInt32 nCCMScale;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// CLUT参数
+        /// </summary>
+        public struct MV_CC_CLUT_PARAM
+        {
+            /// <summary>
+            /// [IN]     是否启用CLUT
+            /// </summary>
+            public Boolean bCLUTEnable;
+
+            /// <summary>
+            /// [IN]     量化系数(2的整数幂)
+            /// </summary>
+            public UInt32 nCLUTScale;
+
+            /// <summary>
+            /// [IN]     CLUT大小，建议值17
+            /// </summary>
+            public UInt32 nCLUTSize;
+
+            /// <summary>
+            /// [OUT]    量化CLUT
+            /// </summary>
+            public IntPtr pCLUTBuf;
+
+            /// <summary>
+            /// [IN]     量化CLUT缓存大小（nCLUTSize*nCLUTSize*nCLUTSize*sizeof(int)*3）
+            /// </summary>
+            public UInt32 nCLUTBufLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 对比度调节参数
+        /// </summary>
+        public struct MV_CC_CONTRAST_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度(最小8)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度(最小8)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     对比度值，范围:[1, 10000]
+            /// </summary>
+            public UInt32 nContrastFactor;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 锐化参数
+        /// </summary>
+        public struct MV_CC_SHARPEN_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度(最小8)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度(最小8)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     锐度调节强度，范围:[0, 500]
+            /// </summary>
+            public UInt32 nSharpenAmount;
+
+            /// <summary>
+            /// [IN]     锐度调节半径（半径越大，耗时越长），范围:[1, 21]
+            /// </summary>
+            public UInt32 nSharpenRadius;
+
+            /// <summary>
+            /// [IN]     锐度调节阈值，范围:[0, 255]
+            /// </summary>
+            public UInt32 nSharpenThreshold;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 色彩校正参数（包括CCM和CLUT）
+        /// </summary>
+        public struct MV_CC_COLOR_CORRECT_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     输入有效图像位数，8 or 10 or 12 or 16
+            /// </summary>
+            public UInt32 nImageBit;
+
+            /// <summary>
+            /// [IN]     输入Gamma信息
+            /// </summary>
+            public MV_CC_GAMMA_PARAM stGammaParam;
+
+            /// <summary>
+            /// [IN]     输入CCM信息
+            /// </summary>
+            public MV_CC_CCM_PARAM_EX stCCMParam;
+
+            /// <summary>
+            /// [IN]     输入CLUT信息
+            /// </summary>
+            public MV_CC_CLUT_PARAM stCLUTParam;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 矩形ROI参数
+        /// </summary>
+        public struct MV_CC_RECT_I
+        {
+            /// <summary>
+            /// [IN]     矩形左上角X轴坐标
+            /// </summary>
+            public UInt32 nX;
+
+            /// <summary>
+            /// [IN]     矩形左上角Y轴坐标
+            /// </summary>
+            public UInt32 nY;
+
+            /// <summary>
+            /// [IN]     矩形宽度
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     矩形高度
+            /// </summary>
+            public UInt32 nHeight;
+        };
+
+        /// <summary>
+        /// 噪声估计参数
+        /// </summary>
+        public struct MV_CC_NOISE_ESTIMATE_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [IN]     图像ROI
+            /// </summary>
+            public IntPtr pstROIRect;
+
+            /// <summary>
+            /// [IN]     ROI个数
+            /// </summary>
+            public UInt32 nROINum;
+
+            //Bayer域噪声估计参数，Mono8/RGB域无效
+            /// <summary>
+            /// [IN]     噪声阈值[0-4095]
+            /// </summary>
+            public UInt32 nNoiseThreshold;
+
+            /// <summary>
+            /// [OUT]    输出噪声特性
+            /// </summary>
+            public IntPtr pNoiseProfile;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nNoiseProfileSize;
+
+            /// <summary>
+            /// [OUT]    输出噪声特性长度
+            /// </summary>
+            public UInt32 nNoiseProfileLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 空域降噪参数
+        /// </summary>
+        public struct MV_CC_SPATIAL_DENOISE_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [OUT]    输出降噪后的数据
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出降噪后的数据长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     输入噪声特性
+            /// </summary>
+            public IntPtr pNoiseProfile;
+
+            /// <summary>
+            /// [IN]     输入噪声特性长度
+            /// </summary>
+            public UInt32 nNoiseProfileLen;
+
+            //Bayer域空域降噪算法参数，Mono8/RGB域无效
+            /// <summary>
+            /// [IN]     降噪强度(0-100)
+            /// </summary>
+            public UInt32 nBayerDenoiseStrength;
+
+            /// <summary>
+            /// [IN]     锐化强度(0-32)
+            /// </summary>
+            public UInt32 nBayerSharpenStrength;
+
+            /// <summary>
+            /// [IN]     噪声校正系数(0-1280)
+            /// </summary>
+            public UInt32 nBayerNoiseCorrect;
+
+            //Mono8/RGB域空域降噪算法参数，Bayer域无效
+            /// <summary>
+            /// [IN]     亮度校正系数(1-2000)
+            /// </summary>
+            public UInt32 nNoiseCorrectLum;
+
+            /// <summary>
+            /// [IN]     色调校正系数(1-2000)
+            /// </summary>
+            public UInt32 nNoiseCorrectChrom;
+
+            /// <summary>
+            /// [IN]     亮度降噪强度(0-100)
+            /// </summary>
+            public UInt32 nStrengthLum;
+
+            /// <summary>
+            /// [IN]     色调降噪强度(0-100)
+            /// </summary>
+            public UInt32 nStrengthChrom;
+
+            /// <summary>
+            /// [IN]     锐化强度(1-1000)
+            /// </summary>
+            public UInt32 nStrengthSharpen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// LSC标定参数
+        /// </summary>
+        public struct MV_CC_LSC_CALIB_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度(16~65536)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度(16~65536)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [OUT]    输出标定表缓存
+            /// </summary>
+            public IntPtr pCalibBuf;
+
+            /// <summary>
+            /// [IN]     提供的标定表缓冲大小（nWidth*nHeight*sizeof(unsigned short)）
+            /// </summary>
+            public UInt32 nCalibBufSize;
+
+            /// <summary>
+            /// [OUT]    输出标定表缓存长度
+            /// </summary>
+            public UInt32 nCalibBufLen;
+
+            /// <summary>
+            /// [IN]     宽度分块数
+            /// </summary>
+            public UInt32 nSecNumW;
+
+            /// <summary>
+            /// [IN]     高度分块数
+            /// </summary>
+            public UInt32 nSecNumH;
+
+            /// <summary>
+            /// [IN]     边缘填充系数，范围1~5
+            /// </summary>
+            public UInt32 nPadCoef;
+
+            /// <summary>
+            /// [IN]     标定方式，0-中心为基准
+            ///                    1-最亮区域为基准
+            ///                    2-目标亮度
+            /// </summary>
+            public UInt32 nCalibMethod;
+
+            /// <summary>
+            /// [IN]     目标亮度（8bits，[0,255])
+            ///         （10bits，[0,1023])
+            ///         （12bits，[0,4095])
+            ///         （16bits，[0,65535])
+            /// </summary>
+            public UInt32 nTargetGray;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// LSC校正参数
+        /// </summary>
+        public struct MV_CC_LSC_CORRECT_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽度(16~65536)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高度(16~65536)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     输入的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入图像缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入图像缓存长度
+            /// </summary>
+            public UInt32 nSrcBufLen;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出像素数据缓存长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]     输入校正表缓存
+            /// </summary>
+            public IntPtr pCalibBuf;
+
+            /// <summary>
+            /// [IN]     输入校正表缓存长度
+            /// </summary>
+            public UInt32 nCalibBufLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 噪声特性类型
+        /// </summary>
+        public enum MV_CC_BAYER_NOISE_FEATURE_TYPE
+        {
+            /// <summary>
+            /// 无效 
+            /// </summary>
+            MV_CC_BAYER_NOISE_FEATURE_TYPE_INVALID = 0,
+
+            /// <summary>
+            /// 噪声曲线
+            /// </summary>
+            MV_CC_BAYER_NOISE_FEATURE_TYPE_PROFILE = 1,
+
+            /// <summary>
+            /// 噪声水平
+            /// </summary>
+            MV_CC_BAYER_NOISE_FEATURE_TYPE_LEVEL = 2,
+
+            /// <summary>
+            /// 默认值
+            /// </summary>
+            MV_CC_BAYER_NOISE_FEATURE_TYPE_DEFAULT = 2,
+        };
+
+        /// <summary>
+        /// 噪声基本信息
+        /// </summary>
+        public struct MV_CC_BAYER_NOISE_PROFILE_INFO
+        {
+            /// <summary>
+            /// 版本
+            /// </summary>
+            public UInt32 nVersion;
+
+            /// <summary>
+            /// 噪声特性类型
+            /// </summary>
+            public MV_CC_BAYER_NOISE_FEATURE_TYPE enNoiseFeatureType;
+
+            /// <summary>
+            /// 图像格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// 平均噪声水平
+            /// </summary>
+            public Int32 nNoiseLevel;
+
+            /// <summary>
+            /// 曲线点数
+            /// </summary>
+            public UInt32 nCurvePointNum;
+
+            /// <summary>
+            /// 噪声曲线
+            /// </summary>
+            public IntPtr nNoiseCurve;
+
+            /// <summary>
+            /// 亮度曲线
+            /// </summary>
+            public IntPtr nLumCurve;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 噪声估计参数
+        /// </summary>
+        public struct MV_CC_BAYER_NOISE_ESTIMATE_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽(大于等于8)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高(大于等于8)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [IN]     噪声阈值(0-4095)
+            /// </summary>
+            public UInt32 nNoiseThreshold;
+
+            /// <summary>
+            /// [IN]     用于存储噪声曲线和亮度曲线（需要外部分配，缓存大小：4096 * sizeof(int) * 2）
+            /// </summary>
+            public IntPtr pCurveBuf;
+
+            /// <summary>
+            /// [OUT]    降噪特性信息
+            /// </summary>
+            public MV_CC_BAYER_NOISE_PROFILE_INFO stNoiseProfile;
+
+            /// <summary>
+            /// [IN]     线程数量，0表示算法库根据硬件自适应；1表示单线程（默认）；大于1表示线程数目
+            /// </summary>
+            public UInt32 nThreadNum;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 降噪参数
+        /// </summary>
+        public struct MV_CC_BAYER_SPATIAL_DENOISE_PARAM
+        {
+            /// <summary>
+            /// [IN]     图像宽(大于等于8)
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高(大于等于8)
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [IN]     像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcData;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>
+            /// [OUT]    输出降噪后的数据
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出降噪后的数据长度
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [IN]    降噪特性信息(来源于噪声估计)
+            /// </summary>
+            public MV_CC_BAYER_NOISE_PROFILE_INFO stNoiseProfile;
+
+            /// <summary>
+            /// [IN]     降噪强度(0-100) 
+            /// </summary>
+            public UInt32 nDenoiseStrength;
+
+            /// <summary>
+            /// [IN]     锐化强度(0-32)
+            /// </summary>
+            public UInt32 nSharpenStrength;
+
+            /// <summary>
+            /// [IN]     噪声校正系数(0-1280)
+            /// </summary>
+            public UInt32 nNoiseCorrect;
+
+            /// <summary>
+            /// [IN]     线程数量，0表示算法库根据硬件自适应；1表示单线程（默认）；大于1表示线程数目
+            /// </summary>
+            public UInt32 nThreadNum;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 帧特殊信息
+        /// </summary>
+        public struct MV_CC_FRAME_SPEC_INFO
+        {
+            //设备水印时标
+            /// <summary>
+            /// [OUT]     秒数
+            /// </summary>
+            public UInt32 nSecondCount;
+
+            /// <summary>
+            /// [OUT]     周期数
+            /// </summary>
+            public UInt32 nCycleCount;
+
+            /// <summary>
+            /// [OUT]     周期偏移量
+            /// </summary>
+            public UInt32 nCycleOffset;
+
+            /// <summary>
+            /// [OUT]     增益
+            /// </summary>
+            public Single fGain;
+
+            /// <summary>
+            /// [OUT]     曝光时间
+            /// </summary>
+            public Single fExposureTime;
+
+            /// <summary>
+            /// [OUT]     平均亮度
+            /// </summary>
+            public UInt32 nAverageBrightness;
+
+            //白平衡相关
+            /// <summary>
+            /// [OUT]     红色
+            /// </summary>
+            public UInt32 nRed;
+
+            /// <summary>
+            /// [OUT]     绿色
+            /// </summary>
+            public UInt32 nGreen;
+
+            /// <summary>
+            /// [OUT]     蓝色
+            /// </summary>
+            public UInt32 nBlue;
+
+            /// <summary>
+            /// [OUT]     总帧数
+            /// </summary>
+            public UInt32 nFrameCounter;
+
+            /// <summary>
+            /// [OUT]     触发计数
+            /// </summary>
+            public UInt32 nTriggerIndex;
+
+            /// <summary>
+            /// [OUT]     输入
+            /// </summary>
+            public UInt32 nInput;
+
+            /// <summary>
+            /// [OUT]     输出
+            /// </summary>
+            public UInt32 nOutput;
+
+            /// <summary>
+            /// [OUT]     水平偏移量
+            /// </summary>
+            public UInt16 nOffsetX;
+
+            /// <summary>
+            /// [OUT]     垂直偏移量
+            /// </summary>
+            public UInt16 nOffsetY;
+
+            /// <summary>
+            /// [OUT]     水印宽
+            /// </summary>
+            public UInt16 nFrameWidth;
+
+            /// <summary>
+            /// [OUT]     水印高
+            /// </summary>
+            public UInt16 nFrameHeight;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// HB解码参数
+        /// </summary>
+        public struct MV_CC_HB_DECODE_PARAM
+        {
+            /// <summary>
+            /// [IN]     输入数据缓存
+            /// </summary>
+            public IntPtr pSrcBuf;
+
+            /// <summary>
+            /// [IN]     输入数据大小
+            /// </summary>
+            public UInt32 nSrcLen;
+
+            /// <summary>
+            /// [OUT]    图像宽
+            /// </summary>
+            public UInt32 nWidth;
+
+            /// <summary>
+            /// [OUT]    图像高
+            /// </summary>
+            public UInt32 nHeight;
+
+            /// <summary>
+            /// [OUT]    输出数据缓存
+            /// </summary>
+            public IntPtr pDstBuf;
+
+            /// <summary>
+            /// [IN]     提供的输出缓冲区大小
+            /// </summary>
+            public UInt32 nDstBufSize;
+
+            /// <summary>
+            /// [OUT]    输出数据大小
+            /// </summary>
+            public UInt32 nDstBufLen;
+
+            /// <summary>
+            /// [OUT]     输出的像素格式
+            /// </summary>
+            public MvGvspPixelType enDstPixelType;
+
+            /// <summary>
+            /// [OUT]    水印信息
+            /// </summary>
+            public MV_CC_FRAME_SPEC_INFO stFrameSpecInfo;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 录像格式定义
+        /// </summary>
+        public enum MV_RECORD_FORMAT_TYPE
+        {
+            /// <summary>
+            /// 未定义格式
+            /// </summary>
+            MV_FormatType_Undefined = 0,
+
+            /// <summary>
+            /// AVI格式
+            /// </summary>
+            MV_FormatType_AVI = 1,
+        }
+
+        /// <summary>
+        /// 录像参数
+        /// </summary>
+        public struct MV_CC_RECORD_PARAM
+        {
+            /// <summary>
+            /// [IN]     输入数据的像素格式
+            /// </summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>
+            /// [IN]     图像宽(指定目标参数时需为8的倍数)
+            /// </summary>
+            public UInt16 nWidth;
+
+            /// <summary>
+            /// [IN]     图像高(指定目标参数时需为8的倍数)
+            /// </summary>
+            public UInt16 nHeight;
+
+            /// <summary>
+            /// [IN]     帧率fps(大于1/16)
+            /// </summary>
+            public Single fFrameRate;
+
+            /// <summary>
+            /// [IN]     码率kbps(128kbps-16Mbps)
+            /// </summary>
+            public UInt32 nBitRate;
+
+            /// <summary>
+            /// [IN]     录像格式
+            /// </summary>
+            public MV_RECORD_FORMAT_TYPE enRecordFmtType;
+
+            /// <summary>
+            /// [IN]     录像文件存放路径
+            /// </summary>
+            public String strFilePath;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 输入帧信息
+        /// </summary>
+        public struct MV_CC_INPUT_FRAME_INFO
+        {
+            /// <summary>
+            /// [IN]     图像数据指针
+            /// </summary>
+            public IntPtr pData;
+
+            /// <summary>
+            /// [IN]     图像大小
+            /// </summary>
+            public UInt32 nDataLen;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nRes;
+        };
+
+        /// <summary>
+        /// 采集模式
+        /// </summary>
+        public enum MV_CAM_ACQUISITION_MODE
+        {
+            /// <summary>
+            /// 单帧模式
+            /// </summary>
+            MV_ACQ_MODE_SINGLE = 0,
+
+            /// <summary>
+            /// 多帧模式
+            /// </summary>
+            MV_ACQ_MODE_MUTLI = 1,
+
+            /// <summary>
+            /// 持续采集模式
+            /// </summary>
+            MV_ACQ_MODE_CONTINUOUS = 2,
+        };
+
+        /// <summary>
+        /// 增益模式
+        /// </summary>
+        public enum MV_CAM_GAIN_MODE
+        {
+            /// <summary>
+            /// 关闭
+            /// </summary>
+            MV_GAIN_MODE_OFF = 0,
+
+            /// <summary>
+            /// 一次
+            /// </summary>
+            MV_GAIN_MODE_ONCE = 1,
+
+            /// <summary>
+            /// 连续
+            /// </summary>
+            MV_GAIN_MODE_CONTINUOUS = 2,
+        };
+
+        /// <summary>
+        /// 曝光模式
+        /// </summary>
+        public enum MV_CAM_EXPOSURE_MODE
+        {
+            /// <summary>
+            /// Timed
+            /// </summary>
+            MV_EXPOSURE_MODE_TIMED = 0,
+
+            /// <summary>
+            /// TriggerWidth
+            /// </summary>
+            MV_EXPOSURE_MODE_TRIGGER_WIDTH = 1,
+        };
+
+        /// <summary>
+        /// 自动曝光模式
+        /// </summary>
+        public enum MV_CAM_EXPOSURE_AUTO_MODE
+        {
+            /// <summary>
+            /// 关闭
+            /// </summary>
+            MV_EXPOSURE_AUTO_MODE_OFF = 0,
+
+            /// <summary>
+            /// 一次
+            /// </summary>
+            MV_EXPOSURE_AUTO_MODE_ONCE = 1,
+
+            /// <summary>
+            /// 连续
+            /// </summary>
+            MV_EXPOSURE_AUTO_MODE_CONTINUOUS = 2,
+        };
+
+        /// <summary>
+        /// 相机触发模式
+        /// </summary>
+        public enum MV_CAM_TRIGGER_MODE
+        {
+            /// <summary>
+            /// 关闭
+            /// </summary>
+            MV_TRIGGER_MODE_OFF = 0,
+
+            /// <summary>
+            /// 打开
+            /// </summary>
+            MV_TRIGGER_MODE_ON = 1,
+        };
+
+        /// <summary>
+        /// Gamma选择器
+        /// </summary>
+        public enum MV_CAM_GAMMA_SELECTOR
+        {
+            /// <summary>
+            /// USER
+            /// </summary>
+            MV_GAMMA_SELECTOR_USER = 1,
+
+            /// <summary>
+            /// SRGB
+            /// </summary>
+            MV_GAMMA_SELECTOR_SRGB = 2,
+        };
+
+        /// <summary>
+        /// 自动白平衡
+        /// </summary>
+        public enum MV_CAM_BALANCEWHITE_AUTO
+        {
+            /// <summary>
+            /// 关闭自动白平衡
+            /// </summary>
+            MV_BALANCEWHITE_AUTO_OFF = 0,
+
+            /// <summary>
+            /// 一次自动白平衡
+            /// </summary>
+            MV_BALANCEWHITE_AUTO_ONCE = 2,
+
+            /// <summary>
+            /// 连续自动白平衡
+            /// </summary>
+            MV_BALANCEWHITE_AUTO_CONTINUOUS = 1,
+        }
+
+        /// <summary>
+        /// 触发源
+        /// </summary>
+        public enum MV_CAM_TRIGGER_SOURCE
+        {
+            /// <summary>
+            /// LINE0
+            /// </summary>
+            MV_TRIGGER_SOURCE_LINE0 = 0,
+
+            /// <summary>
+            /// LINE1
+            /// </summary>
+            MV_TRIGGER_SOURCE_LINE1 = 1,
+
+            /// <summary>
+            /// LINE2
+            /// </summary>
+            MV_TRIGGER_SOURCE_LINE2 = 2,
+
+            /// <summary>
+            /// LINE3
+            /// </summary>
+            MV_TRIGGER_SOURCE_LINE3 = 3,
+
+            /// <summary>
+            /// COUNTER0
+            /// </summary>
+            MV_TRIGGER_SOURCE_COUNTER0 = 4,
+
+            /// <summary>
+            /// SOFTWARE
+            /// </summary>
+            MV_TRIGGER_SOURCE_SOFTWARE = 7,
+
+            /// <summary>
+            /// FrequencyConverter
+            /// </summary>
+            MV_TRIGGER_SOURCE_FrequencyConverter = 8,
+        }
+
+        /// <summary>
+        /// ALL MATHCH INFO
+        /// </summary>
+        public struct MV_ALL_MATCH_INFO
+        {
+            /// <summary>
+            /// 需要输出的信息类型，e.g. MV_MATCH_TYPE_NET_DETECT
+            /// </summary>
+            public UInt32 nType;
+
+            /// <summary>
+            /// 输出的信息缓存，由调用者分配
+            /// </summary>
+            public IntPtr pInfo;
+
+            /// <summary>
+            /// 信息缓存的大小
+            /// </summary>
+            public UInt32 nInfoSize;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public struct MV_MATCH_INFO_NET_DETECT
+        {
+            /// <summary>
+            /// 已接收数据大小  [统计StartGrabbing和StopGrabbing之间的数据量]
+            /// </summary>
+            public Int64 nReviceDataSize;
+
+            /// <summary>
+            /// 丢失的包数量
+            /// </summary>
+            public Int64 nLostPacketCount;
+
+            /// <summary>
+            /// 丢帧数量
+            /// </summary>
+            public UInt32 nLostFrameCount;
+
+            /// <summary>
+            /// 帧数
+            /// </summary>
+            public UInt32 nNetRecvFrameCount;
+
+            /// <summary>
+            /// 请求重发包数
+            /// </summary>
+            public Int64 nRequestResendPacketCount;
+
+            /// <summary>
+            /// 重发包数
+            /// </summary>
+            public Int64 nResendPacketCount;
+        }
+
+        /// <summary>
+        /// USB
+        /// </summary>
+        public struct MV_MATCH_INFO_USB_DETECT
+        {
+            /// <summary>
+            /// 已接收数据大小    [统计OpenDevicce和CloseDevice之间的数据量]
+            /// </summary>
+            public Int64 nReviceDataSize;
+
+            /// <summary>
+            /// 已收到的帧数
+            /// </summary>
+            public UInt32 nRevicedFrameCount;
+
+            /// <summary>
+            /// 错误帧数
+            /// </summary>
+            public UInt32 nErrorFrameCount;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 图像的基本信息
+        /// </summary>
+        public struct MV_IMAGE_BASIC_INFO
+        {
+            /// <summary>
+            /// 宽度值
+            /// </summary>
+            public UInt16 nWidthValue;
+
+            /// <summary>
+            /// 宽度最小值
+            /// </summary>
+            public UInt16 nWidthMin;
+
+            /// <summary>
+            /// 宽度最大值
+            /// </summary>
+            public UInt32 nWidthMax;
+
+            /// <summary>
+            /// Width Inc
+            /// </summary>
+            public UInt32 nWidthInc;
+
+            /// <summary>
+            /// 高度值
+            /// </summary>
+            public UInt32 nHeightValue;
+
+            /// <summary>
+            /// 高度最小值
+            /// </summary>
+            public UInt32 nHeightMin;
+
+            /// <summary>
+            /// 高度最大值
+            /// </summary>
+            public UInt32 nHeightMax;
+
+            /// <summary>
+            /// Height Inc
+            /// </summary>
+            public UInt32 nHeightInc;
+
+            /// <summary>
+            /// 帧率
+            /// </summary>
+            public Single fFrameRateValue;
+
+            /// <summary>
+            /// 最小帧率
+            /// </summary>
+            public Single fFrameRateMin;
+
+            /// <summary>
+            /// 最大帧率
+            /// </summary>
+            public Single fFrameRateMax;
+
+            /// <summary>
+            /// 当前的像素格式
+            /// </summary>
+            public UInt32 enPixelType;
+
+            /// <summary>
+            /// 支持的像素格式种类
+            /// </summary>
+            public UInt32 nSupportedPixelFmtNum;
+
+            /// <summary>
+            /// 像素列表
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
+            public UInt32[] enPixelList;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 节点是否可见的权限等级
+        /// </summary>
+        public enum MV_XML_Visibility
+        {
+            /// <summary>
+            /// Always visible
+            /// </summary>
+            V_Beginner = 0,
+
+            /// <summary>
+            /// Visible for experts or Gurus
+            /// </summary>        
+            V_Expert = 1,
+
+            /// <summary>
+            /// Visible for Gurus
+            /// </summary>
+            V_Guru = 2,
+
+            /// <summary>
+            /// Not Visible
+            /// </summary>
+            V_Invisible = 3,
+
+            /// <summary>
+            /// Object is not yet initialized
+            /// </summary>
+            V_Undefined = 99
+        }
+
+        /// <summary>
+        /// 事件信息
+        /// </summary>
+        public struct MV_EVENT_OUT_INFO
+        {
+            /// <summary>
+            /// 事件名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_EVENT_NAME_SIZE)]
+            public string EventName;
+
+            /// <summary>
+            /// Event号
+            /// </summary>
+            public UInt16 nEventID;
+
+            /// <summary>
+            /// 流通到序号
+            /// </summary>
+            public UInt16 nStreamChannel;
+
+            /// <summary>
+            /// 帧号高位
+            /// </summary>
+            public UInt32 nBlockIdHigh;
+
+            /// <summary>
+            /// 帧号低位
+            /// </summary>
+            public UInt32 nBlockIdLow;
+
+            /// <summary>
+            /// 时间戳高位
+            /// </summary>
+            public UInt32 nTimestampHigh;
+
+            /// <summary>
+            /// 时间戳低位
+            /// </summary>
+            public UInt32 nTimestampLow;
+
+            /// <summary>
+            /// Event数据
+            /// </summary>
+            public IntPtr pEventData;
+
+            /// <summary>
+            /// Event数据长度
+            /// </summary>
+            public UInt32 nEventDataSize;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 文件存取
+        /// </summary>
+        public struct MV_CC_FILE_ACCESS
+        {
+            /// <summary>
+            /// 用户文件名
+            /// </summary>
+            public String pUserFileName;
+
+            /// <summary>
+            /// 设备文件名
+            /// </summary>
+            public String pDevFileName;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 文件存取
+        /// </summary>
+        public struct MV_CC_FILE_ACCESS_EX
+        {
+            /// <summary>
+            /// 用户文件数据缓存空间
+            /// </summary>
+            public IntPtr pUserFileBuf;
+
+            /// <summary>
+            /// 用户数据缓存大小
+            /// </summary>
+            public UInt32 nFileBufSize;
+
+            /// <summary>
+            /// 文件实际缓存大小
+            /// </summary>
+            public UInt32 nFileBufLen;
+
+            /// <summary>
+            /// 设备文件名
+            /// </summary>
+            public String pDevFileName;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 文件存取进度
+        /// </summary>
+        public struct MV_CC_FILE_ACCESS_PROGRESS
+        {
+            /// <summary>
+            /// 已完成的长度
+            /// </summary>
+            public Int64 nCompleted;
+
+            /// <summary>
+            /// 总长度
+            /// </summary>
+            public Int64 nTotal;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// GigE传输类型
+        /// </summary>
+        public enum MV_GIGE_TRANSMISSION_TYPE
+        {
+            /// <summary>
+            /// 表示单播(默认)
+            /// </summary>
+            MV_GIGE_TRANSTYPE_UNICAST = 0x0,
+
+            /// <summary>
+            /// 表示组播
+            /// </summary>
+            MV_GIGE_TRANSTYPE_MULTICAST = 0x1,
+
+            /// <summary>
+            /// 表示局域网内广播，暂不支持
+            /// </summary>
+            MV_GIGE_TRANSTYPE_LIMITEDBROADCAST = 0x2,
+
+            /// <summary>
+            /// 表示子网内广播，暂不支持
+            /// </summary>
+            MV_GIGE_TRANSTYPE_SUBNETBROADCAST = 0x3,
+
+            /// <summary>
+            /// 表示从相机获取，暂不支持
+            /// </summary>
+            MV_GIGE_TRANSTYPE_CAMERADEFINED = 0x4,
+
+            /// <summary>
+            /// 表示用户自定义应用端接收图像数据Port号
+            /// </summary>
+            MV_GIGE_TRANSTYPE_UNICAST_DEFINED_PORT = 0x5,
+
+            /// <summary>
+            /// 表示设置了单播，但本实例不接收图像数据
+            /// </summary>
+            MV_GIGE_TRANSTYPE_UNICAST_WITHOUT_RECV = 0x00010000,
+
+            /// <summary>
+            /// 表示组播模式，但本实例不接收图像数据
+            /// </summary>
+            MV_GIGE_TRANSTYPE_MULTICAST_WITHOUT_RECV = 0x00010001,
+        }
+
+
+        /// <summary>
+        /// 传输模式，可以为单播模式、组播模式等
+        /// </summary>
+        public struct MV_CC_TRANSMISSION_TYPE
+        {
+            /// <summary>
+            /// 传输模式
+            /// </summary>
+            public MV_GIGE_TRANSMISSION_TYPE enTransmissionType;
+
+            /// <summary>
+            /// 目标IP，组播模式下有意义
+            /// </summary>
+            public UInt32 nDestIp;
+
+            /// <summary>
+            /// 目标Port，组播模式下有意义
+            /// </summary>
+            public UInt16 nDestPort;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 动作命令信息
+        /// </summary>
+        public struct MV_ACTION_CMD_INFO
+        {
+            /// <summary>
+            /// 设备密钥
+            /// </summary>
+            public UInt32 nDeviceKey;
+
+            /// <summary>
+            /// 组键
+            /// </summary>
+            public UInt32 nGroupKey;
+
+            /// <summary>
+            /// 组掩码
+            /// </summary>
+            public UInt32 nGroupMask;
+
+            /// <summary>
+            /// 只有设置成1时Action Time才有效，非1时无效
+            /// </summary>
+            public UInt32 bActionTimeEnable;
+
+            /// <summary>
+            /// 预定的时间，和主频有关
+            /// </summary>
+            public Int64 nActionTime;
+
+            /// <summary>
+            /// 广播包地址
+            /// </summary>
+            public String pBroadcastAddress;
+
+            /// <summary>
+            /// 等待ACK的超时时间，如果为0表示不需要ACK
+            /// </summary>
+            public UInt32 nTimeOut;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 动作命令结果
+        /// </summary>
+        public struct MV_ACTION_CMD_RESULT
+        {
+            /// <summary>
+            /// IP address of the device
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
+            public String strDeviceAddress;
+
+            /// <summary>
+            /// status code returned by the device
+            /// </summary>
+            public Int32 nStatus;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 动作命令结果列表
+        /// </summary>
+        public struct MV_ACTION_CMD_RESULT_LIST
+        {
+            /// <summary>
+            /// 返回值个数
+            /// </summary>
+            public UInt32 nNumResults;
+
+            /// <summary>
+            /// 返回的结果
+            /// </summary>
+            public IntPtr pResults;
+        }
+
+        /// <summary>
+        /// 每个节点对应的接口类型
+        /// </summary>
+        public enum MV_XML_InterfaceType
+        {
+            /// <summary>
+            /// IValue接口类型
+            /// </summary>
+            IFT_IValue,
+
+            /// <summary>
+            /// IBase接口类型
+            /// </summary>
+            IFT_IBase,
+
+            /// <summary>
+            /// IInteger接口类型
+            /// </summary>
+            IFT_IInteger,
+
+            /// <summary>
+            /// IBoolean接口类型
+            /// </summary>
+            IFT_IBoolean,
+
+            /// <summary>
+            /// ICommand接口类型
+            /// </summary>
+            IFT_ICommand,
+
+            /// <summary>
+            /// IFloat接口类型
+            /// </summary>
+            IFT_IFloat,
+
+            /// <summary>
+            /// IString接口类型
+            /// </summary>
+            IFT_IString,
+
+            /// <summary>
+            /// IRegister接口类型
+            /// </summary>
+            IFT_IRegister,
+
+            /// <summary>
+            /// ICategory接口类型
+            /// </summary>
+            IFT_ICategory,
+
+            /// <summary>
+            /// IEnumeration接口类型
+            /// </summary>
+            IFT_IEnumeration,
+
+            /// <summary>
+            /// IEnumEntry接口类型
+            /// </summary>
+            IFT_IEnumEntry,
+
+            /// <summary>
+            /// IPort接口类型
+            /// </summary>
+            IFT_IPort,
+        }
+
+
+        /// <summary>
+        /// XML节点特点
+        /// </summary>
+        public struct MV_XML_NODE_FEATURE
+        {
+            /// <summary>
+            /// 节点类型
+            /// </summary>
+            public MV_XML_InterfaceType enType;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// XML节点列表
+        /// </summary>
+        public struct MV_XML_NODES_LIST
+        {
+            /// <summary>
+            /// 节点个数
+            /// </summary>
+            public UInt32 nNodeNum;
+
+            /// <summary>
+            /// 节点列表
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_NODE_NUM_C)]
+            public MV_XML_NODE_FEATURE[] stNodes;
+        }
+
+        /// <summary>
+        /// 整型节点值
+        /// </summary>
+        public struct MVCC_INTVALUE
+        {
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public UInt32 nCurValue;
+
+            /// <summary>
+            /// 最大值
+            /// </summary> 
+            public UInt32 nMax;
+
+            /// <summary>
+            /// 最小值
+            /// </summary>
+            public UInt32 nMin;
+
+            /// <summary>
+            /// Inc
+            /// </summary>
+            public UInt32 nInc;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 整型节点值
+        /// </summary>
+        public struct MVCC_INTVALUE_EX
+        {
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Int64 nCurValue;
+
+            /// <summary>
+            /// 最大值
+            /// </summary>
+            public Int64 nMax;
+
+            /// <summary>
+            /// 最小值
+            /// </summary>
+            public Int64 nMin;
+
+            /// <summary>
+            /// Inc
+            /// </summary>
+            public Int64 nInc;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 浮点型节点值
+        /// </summary>
+        public struct MVCC_FLOATVALUE
+        {
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Single fCurValue;
+
+            /// <summary>
+            /// 最大值
+            /// </summary>
+            public Single fMax;
+
+            /// <summary>
+            /// 最小值
+            /// </summary>
+            public Single fMin;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 枚举型节点值
+        /// </summary>
+        public struct MVCC_ENUMVALUE
+        {
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public UInt32 nCurValue;
+
+            /// <summary>
+            /// 有效数据个数
+            /// </summary>
+            public UInt32 nSupportedNum;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
+            public UInt32[] nSupportValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 字符串型节点值
+        /// </summary>
+        public struct MVCC_STRINGVALUE
+        {
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+            public string chCurValue;
+
+            /// <summary>
+            /// 节点值的最大长度
+            /// </summary>
+            public Int64 nMaxLength;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 节点的读写性
+        /// </summary>
+        public enum MV_XML_AccessMode
+        {
+            /// <summary>
+            /// 未实现
+            /// </summary>
+            AM_NI,
+
+            /// <summary>
+            /// 不可获取
+            /// </summary>
+            AM_NA,
+
+            /// <summary>
+            /// 只写
+            /// </summary>
+            AM_WO,
+
+            /// <summary>
+            /// 只读
+            /// </summary>
+            AM_RO,
+
+            /// <summary>
+            /// 可读可写
+            /// </summary>
+            AM_RW,
+
+            /// <summary>
+            /// 未定义
+            /// </summary>
+            AM_Undefined,
+
+            /// <summary>
+            /// 内部用于AccessMode循环检测
+            /// </summary>
+            AM_CycleDetect
+        }
+
+        /// <summary>
+        /// 整型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Integer
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Int64 nValue;
+
+            /// <summary>
+            /// 最小值
+            /// </summary>
+            public Int64 nMinValue;
+
+            /// <summary>
+            /// 最大值
+            /// </summary>
+            public Int64 nMaxValue;
+
+            /// <summary>
+            /// 增量
+            /// </summary>
+            public Int64 nIncrement;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 布尔型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Boolean
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public bool bValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 命令型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Command
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 浮点型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Float
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Double dfValue;
+
+            /// <summary>
+            /// 最小值
+            /// </summary>
+            public Double dfMinValue;
+
+            /// <summary>
+            /// 最大值
+            /// </summary>
+            public Double dfMaxValue;
+
+            /// <summary>
+            /// 增量
+            /// </summary>
+            public Double dfIncrement;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 字符串类型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_String
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_STRVALUE_STRLEN_C)]
+            public string strValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 寄存器型节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Register
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Int64 nAddrValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 类别属性
+        /// </summary>
+        public struct MV_XML_FEATURE_Category
+        {
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// EnumEntry属性节点
+        /// </summary>
+        public struct MV_XML_FEATURE_EnumEntry
+        {
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public Int32 bIsImplemented;
+
+            /// <summary>
+            /// 父节点数
+            /// </summary>
+            public Int32 nParentsNum;
+
+            /// <summary>
+            /// 父节点列表
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_PARENTS_NUM)]
+            public MV_XML_NODE_FEATURE[] stParentsList;
+
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Int64 nValue;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 节点描述
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct StrSymbolic
+        {
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_SYMBOLIC_STRLEN_C)]
+            public string str;
+        }
+
+        /// <summary>
+        /// Enumeration属性节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Enumeration
+        {
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// Symbolic数
+            /// </summary>
+            public Int32 nSymbolicNum;
+
+            /// <summary>
+            /// 当前Symbolic索引
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_SYMBOLIC_STRLEN_C)]
+            public string strCurrentSymbolic;
+
+            /// <summary>
+            /// Symbolic索引
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
+            public StrSymbolic[] strSymbolic;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 当前值
+            /// </summary>
+            public Int64 nValue;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// Port属性节点
+        /// </summary>
+        public struct MV_XML_FEATURE_Port
+        {
+            /// <summary>
+            /// 是否可见
+            /// </summary>
+            public MV_XML_Visibility enVisivility;
+
+            /// <summary>
+            /// 节点描述
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strDescription;
+
+            /// <summary>
+            /// 显示名称
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strDisplayName;
+
+            /// <summary>
+            /// 节点名
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
+            public string strName;
+
+            /// <summary>
+            /// 提示
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
+            public string strToolTip;
+
+            /// <summary>
+            /// 访问模式
+            /// </summary>
+            public MV_XML_AccessMode enAccessMode;
+
+            /// <summary>
+            /// 是否锁定。0-否；1-是
+            /// </summary>
+            public Int32 bIsLocked;
+
+            /// <summary>
+            /// 保留字节
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>辅助线颜色</summary>
+        public struct MVCC_COLORF
+        {
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fR;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fG;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fB;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fAlpha;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>自定义点坐标</summary>
+        public struct MVCC_POINTF
+        {
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fX;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fY;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>矩形框区域信息</summary>
+        public struct MVCC_RECT_INFO
+        {
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fTop;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fBottom;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fLeft;
+
+            /// <summary>[0.0 , 1.0]</summary>
+            public float fRight;
+
+            /// <summary>辅助线颜色</summary>
+            public MVCC_COLORF stColor;
+
+            /// <summary>辅助线宽度</summary>
+            public UInt32 nLineWidth;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>圆形框区域信息</summary>
+        public struct MVCC_CIRCLE_INFO
+        {
+            /// <summary>圆心信息</summary>
+            public MVCC_POINTF stCenterPoint;
+
+            /// <summary>宽向半径，根据图像的相对位置[0, 1.0]</summary>
+            public float fR1;
+
+            /// <summary>高向半径，根据图像的相对位置[0, 1.0]</summary>
+            public float fR2;
+
+            /// <summary>辅助线颜色信息</summary>
+            public MVCC_COLORF stColor;
+
+            /// <summary>辅助线宽度</summary>
+            public UInt32 nLineWidth;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>线条辅助线信息</summary>
+        public struct MVCC_LINES_INFO
+        {
+            /// <summary>线条辅助线的起始点坐标</summary>
+            public MVCC_POINTF stStartPoint;
+
+            /// <summary>线条辅助线的终点坐标</summary>
+            public MVCC_POINTF stEndPoint;
+
+            /// <summary>辅助线颜色信息</summary>
+            public MVCC_COLORF stColor;
+
+            /// <summary>辅助线宽度</summary>
+            public UInt32 nLineWidth;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>枚举类型指定条目信息</summary>
+        public struct MVCC_ENUMENTRY
+        {
+            /// <summary>指定值</summary>
+            public UInt32 nValue;
+
+            /// <summary>指定值对应的符号</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_SYMBOLIC_LEN)]
+            public Byte[] chSymbolic;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>U3V流异常类型</summary>
+        public enum MV_CC_STREAM_EXCEPTION_TYPE
+        {
+            /// <summary>异常的图像，该帧被丢弃</summary>
+            MV_CC_STREAM_EXCEPTION_ABNORMAL_IMAGE = 0x4001,
+
+            /// <summary>缓存列表溢出，清除最旧的一帧</summary>
+            MV_CC_STREAM_EXCEPTION_LIST_OVERFLOW = 0x4002,
+
+            /// <summary>缓存列表为空，该帧被丢弃</summary>
+            MV_CC_STREAM_EXCEPTION_LIST_EMPTY = 0x4003,
+
+            /// <summary>断流恢复</summary>
+            MV_CC_STREAM_EXCEPTION_RECONNECTION = 0x4004,
+
+            /// <summary>断流,恢复失败,取流被中止</summary>
+            MV_CC_STREAM_EXCEPTION_DISCONNECTED = 0x4005,
+
+            /// <summary>设备异常,取流被中止</summary>
+            MV_CC_STREAM_EXCEPTION_DEVICE = 0x4006,
+        }
+
+        /// <summary>重构后的图像列表</summary>
+        public struct MV_OUTPUT_IMAGE_INFO
+        {
+            /// <summary>源图像宽</summary>
+            public UInt32 nWidth;
+
+            /// <summary>源图像高</summary>
+            public UInt32 nHeight;
+
+            /// <summary>像素格式</summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>输出数据缓存</summary>
+            public IntPtr pBuf;
+
+            /// <summary>输出数据长度</summary>
+            public UInt32 nBufLen;
+
+            /// <summary>提供的输出缓冲区大小</summary>
+            public UInt32 nBufSize;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public UInt32[] nReserved;
+        }
+
+        /// <summary>
+        /// 分时曝光的图像处理方式
+        /// </summary>
+        public enum MV_IMAGE_RECONSTRUCTION_METHOD
+        {
+            /// <summary>
+            /// 源图像按行拆分成多张图像
+            /// </summary>
+            MV_SPLIT_BY_LINE = 1,
+        }
+
+        /// <summary>重构图像参数信息</summary>
+        public struct MV_RECONSTRUCT_IMAGE_PARAM
+        {
+            /// <summary>源图像宽</summary>
+            public UInt32 nWidth;
+
+            /// <summary>源图像高</summary>
+            public UInt32 nHeight;
+
+            /// <summary>像素格式</summary>
+            public MvGvspPixelType enPixelType;
+
+            /// <summary>输入数据缓存</summary>
+            public IntPtr pSrcData;
+
+            /// <summary>输入数据长度</summary>
+            public UInt32 nSrcDataLen;
+
+            /// <summary>曝光个数(1-8]</summary>
+            public UInt32 nExposureNum;
+
+            /// <summary>图像重构方式</summary>
+            public MV_IMAGE_RECONSTRUCTION_METHOD enReconstructMethod;
+
+            /// <summary>
+            /// 输出数据缓存信息
+            /// </summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_SPLIT_NUM)]
+            public MV_OUTPUT_IMAGE_INFO[] stDstBufList;
+
+            /// <summary>预留字节</summary>
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public UInt32[] nReserved;
+        }
+        #endregion
+
+        #region 像素格式定义
+        /// <summary>
+        /// 像素格式定义
+        /// </summary>
+        public enum MvGvspPixelType
+        {
+            /// <summary>
+            /// 未定义像素格式
+            /// </summary>
+            PixelType_Gvsp_Undefined = -1,
+
+            /// <summary>
+            /// Mono1p
+            /// </summary>
+            PixelType_Gvsp_Mono1p = 0x01010037,
+
+            /// <summary>
+            /// Mono2p
+            /// </summary>
+            PixelType_Gvsp_Mono2p = 0x01020038,
+
+            /// <summary>
+            /// Mono4p
+            /// </summary>
+            PixelType_Gvsp_Mono4p = 0x01040039,
+
+            /// <summary>
+            /// Mono8
+            /// </summary>
+            PixelType_Gvsp_Mono8 = 0x01080001,
+
+            /// <summary>
+            /// Mono8_Signed
+            /// </summary>
+            PixelType_Gvsp_Mono8_Signed = 0x01080002,
+
+            /// <summary>
+            /// Mono10
+            /// </summary>
+            PixelType_Gvsp_Mono10 = 0x01100003,
+
+            /// <summary>
+            /// Mono10_Packed
+            /// </summary>
+            PixelType_Gvsp_Mono10_Packed = 0x010c0004,
+
+            /// <summary>
+            /// Mono12
+            /// </summary>
+            PixelType_Gvsp_Mono12 = 0x01100005,
+
+            /// <summary>
+            /// Mono12_Packed
+            /// </summary>
+            PixelType_Gvsp_Mono12_Packed = 0x010c0006,
+
+            /// <summary>
+            /// Mono14
+            /// </summary>
+            PixelType_Gvsp_Mono14 = 0x01100025,
+
+            /// <summary>
+            /// Mono16
+            /// </summary>
+            PixelType_Gvsp_Mono16 = 0x01100007,
+
+            /// <summary>
+            /// BayerGR8
+            /// </summary>
+            PixelType_Gvsp_BayerGR8 = 0x01080008,
+
+            /// <summary>
+            /// BayerRG8
+            /// </summary>
+            PixelType_Gvsp_BayerRG8 = 0x01080009,
+
+            /// <summary>
+            /// BayerGB8
+            /// </summary>
+            PixelType_Gvsp_BayerGB8 = 0x0108000a,
+
+            /// <summary>
+            /// BayerBG8
+            /// </summary>
+            PixelType_Gvsp_BayerBG8 = 0x0108000b,
+
+            /// <summary>
+            /// BayerRBGG8
+            /// </summary>
+            PixelType_Gvsp_BayerRBGG8 = 0x01080046,
+
+            /// <summary>
+            /// BayerGR10
+            /// </summary>
+            PixelType_Gvsp_BayerGR10 = 0x0110000c,
+
+            /// <summary>
+            /// BayerRG10
+            /// </summary>
+            PixelType_Gvsp_BayerRG10 = 0x0110000d,
+
+            /// <summary>
+            /// BayerGB10
+            /// </summary>
+            PixelType_Gvsp_BayerGB10 = 0x0110000e,
+
+            /// <summary>
+            /// BayerBG10
+            /// </summary>
+            PixelType_Gvsp_BayerBG10 = 0x0110000f,
+
+            /// <summary>
+            /// BayerGR12
+            /// </summary>
+            PixelType_Gvsp_BayerGR12 = 0x01100010,
+
+            /// <summary>
+            /// BayerRG12
+            /// </summary>
+            PixelType_Gvsp_BayerRG12 = 0x01100011,
+
+            /// <summary>
+            /// BayerGB12
+            /// </summary>
+            PixelType_Gvsp_BayerGB12 = 0x01100012,
+
+            /// <summary>
+            /// BayerBG12
+            /// </summary>
+            PixelType_Gvsp_BayerBG12 = 0x01100013,
+
+            /// <summary>
+            /// BayerGR10_Packed
+            /// </summary>
+            PixelType_Gvsp_BayerGR10_Packed = 0x010c0026,
+
+            /// <summary>
+            /// BayerRG10_Packed
+            /// </summary>
+            PixelType_Gvsp_BayerRG10_Packed = 0x010c0027,
+
+            /// <summary>
+            /// BayerGB10_Packed
+            /// </summary>
+            PixelType_Gvsp_BayerGB10_Packed = 0x010c0028,
+
+            /// <summary>
+            /// BayerBG10_Packed
+            /// </summary>
+            PixelType_Gvsp_BayerBG10_Packed = 0x010c0029,
+
+            /// <summary>
+            /// BayerGR12_Packed
+            /// </summary>
+            PixelType_Gvsp_BayerGR12_Packed = 0x010c002a,
+
+            /// <summary>BayerRG12_Packed</summary>
+            PixelType_Gvsp_BayerRG12_Packed = 0x010c002b,
+
+            /// <summary>BayerGB12_Packed</summary>
+            PixelType_Gvsp_BayerGB12_Packed = 0x010c002c,
+
+            /// <summary>BayerBG12_Packed</summary>
+            PixelType_Gvsp_BayerBG12_Packed = 0x010c002d,
+
+            /// <summary>BayerGR16</summary>
+            PixelType_Gvsp_BayerGR16 = 0x0110002e,
+
+            /// <summary>BayerRG16</summary>
+            PixelType_Gvsp_BayerRG16 = 0x0110002f,
+
+            /// <summary>BayerGB16</summary>
+            PixelType_Gvsp_BayerGB16 = 0x01100030,
+
+            /// <summary>BayerBG16</summary>
+            PixelType_Gvsp_BayerBG16 = 0x01100031,
+
+            /// <summary>RGB8_Packed</summary>
+            PixelType_Gvsp_RGB8_Packed = 0x02180014,
+
+            /// <summary>BGR8_Packed</summary>
+            PixelType_Gvsp_BGR8_Packed = 0x02180015,
+
+            /// <summary>RGBA8_Packed</summary>
+            PixelType_Gvsp_RGBA8_Packed = 0x02200016,
+
+            /// <summary>BGRA8_Packed</summary>
+            PixelType_Gvsp_BGRA8_Packed = 0x02200017,
+
+            /// <summary>RGB10_Packed</summary>
+            PixelType_Gvsp_RGB10_Packed = 0x02300018,
+
+            /// <summary>BGR10_Packed</summary>
+            PixelType_Gvsp_BGR10_Packed = 0x02300019,
+
+            /// <summary>RGB12_Packed</summary>
+            PixelType_Gvsp_RGB12_Packed = 0x0230001a,
+
+            /// <summary>BGR12_Packed</summary>
+            PixelType_Gvsp_BGR12_Packed = 0x0230001b,
+
+            /// <summary>RGB16_Packed</summary>
+            PixelType_Gvsp_RGB16_Packed = 0x02300033,
+
+            /// <summary>BGR16_Packed/// </summary>
+            PixelType_Gvsp_BGR16_Packed = 0x0230004b,
+
+            /// <summary>RGBA16_Packed</summary>
+            PixelType_Gvsp_RGBA16_Packed = 0x02400040,
+
+            /// <summary>BGRA16_Packed</summary>
+            PixelType_Gvsp_BGRA16_Packed = 0x02400051,
+
+            /// <summary>RGB10V1_Packe</summary>
+            PixelType_Gvsp_RGB10V1_Packed = 0x0220001c,
+
+            /// <summary>RGB10V2_Packed</summary>
+            PixelType_Gvsp_RGB10V2_Packed = 0x0220001d,
+
+            /// <summary>RGB12V1_Packed</summary>
+            PixelType_Gvsp_RGB12V1_Packed = 0x02240034,
+
+            /// <summary>RGB565_Packed</summary>
+            PixelType_Gvsp_RGB565_Packed = 0x02100035,
+
+            /// <summary>BGR565_Packed</summary>
+            PixelType_Gvsp_BGR565_Packed = 0x02100036,
+
+            /// <summary>YUV411_Packed</summary>
+            PixelType_Gvsp_YUV411_Packed = 0x020c001e,
+
+            /// <summary>YUV422_Packed</summary>
+            PixelType_Gvsp_YUV422_Packed = 0x0210001f,
+
+            /// <summary>YUV422_YUYV_Packed</summary>
+            PixelType_Gvsp_YUV422_YUYV_Packed = 0x02100032,
+
+            /// <summary>YUV444_Packed</summary>
+            PixelType_Gvsp_YUV444_Packed = 0x02180020,
+
+            /// <summary>YCBCR8_CBYCR</summary>
+            PixelType_Gvsp_YCBCR8_CBYCR = 0x0218003a,
+
+            /// <summary>YCBCR422_8</summary>
+            PixelType_Gvsp_YCBCR422_8 = 0x0210003b,
+
+            /// <summary>YCBCR422_8_CBYCRY</summary>
+            PixelType_Gvsp_YCBCR422_8_CBYCRY = 0x02100043,
+
+            /// <summary>YCBCR411_8_CBYYCRYY</summary>
+            PixelType_Gvsp_YCBCR411_8_CBYYCRYY = 0x020c003c,
+
+            /// <summary>YCBCR601_8_CBYCR</summary>
+            PixelType_Gvsp_YCBCR601_8_CBYCR = 0x0218003d,
+
+            /// <summary>YCBCR601_422_8</summary>
+            PixelType_Gvsp_YCBCR601_422_8 = 0x0210003e,
+
+            /// <summary>YCBCR601_422_8_CBYCRY</summary>
+            PixelType_Gvsp_YCBCR601_422_8_CBYCRY = 0x02100044,
+
+            /// <summary>YCBCR601_411_8_CBYYCRYY</summary>
+            PixelType_Gvsp_YCBCR601_411_8_CBYYCRYY = 0x020c003f,
+
+            /// <summary>YCBCR709_8_CBYCR</summary>
+            PixelType_Gvsp_YCBCR709_8_CBYCR = 0x02180040,
+
+            /// <summary>YCBCR709_422_8</summary>
+            PixelType_Gvsp_YCBCR709_422_8 = 0x02100041,
+
+            /// <summary>YCBCR709_422_8_CBYCRY</summary>
+            PixelType_Gvsp_YCBCR709_422_8_CBYCRY = 0x02100045,
+
+            /// <summary>YCBCR709_411_8_CBYYCRYY</summary>
+            PixelType_Gvsp_YCBCR709_411_8_CBYYCRYY = 0x020c0042,
+
+            /// <summary>YUV420SP_NV12</summary>
+            PixelType_Gvsp_YUV420SP_NV12 = 0X020c8001,
+
+            /// <summary>YUV420SP_NV21</summary>
+            PixelType_Gvsp_YUV420SP_NV21 = 0X020c8002,
+
+            /// <summary>RGB8_Planar</summary>
+            PixelType_Gvsp_RGB8_Planar = 0x02180021,
+
+            /// <summary>RGB10_Planar</summary>
+            PixelType_Gvsp_RGB10_Planar = 0x02300022,
+
+            /// <summary>RGB12_Planar</summary>
+            PixelType_Gvsp_RGB12_Planar = 0x02300023,
+
+            /// <summary>RGB16_Planar</summary>
+            PixelType_Gvsp_RGB16_Planar = 0x02300024,
+
+            /// <summary>Jpeg</summary>
+            PixelType_Gvsp_Jpeg = unchecked((Int32)0x80180001),
+
+            /// <summary>Coord3D_ABC32f</summary>
+            PixelType_Gvsp_Coord3D_ABC32f = 0x026000C0,
+
+            /// <summary>Coord3D_ABC32f_Planar</summary>
+            PixelType_Gvsp_Coord3D_ABC32f_Planar = 0x026000C1,
+
+            /// <summary>Coord3D_AC32f</summary>
+            PixelType_Gvsp_Coord3D_AC32f = 0x024000C2,//3D coordinate A-C 32-bit floating point
+
+            /// <summary>COORD3D_DEPTH_PLUS_MASK</summary>
+            PixelType_Gvsp_COORD3D_DEPTH_PLUS_MASK = unchecked((Int32)0x821c0001),
+
+            /// <summary>Coord3D_ABC32</summary>
+            PixelType_Gvsp_Coord3D_ABC32 = unchecked((Int32)0x82603001),
+
+            /// <summary>Coord3D_AB32f</summary>
+            PixelType_Gvsp_Coord3D_AB32f = unchecked((Int32)0x82403002),
+
+            /// <summary>Coord3D_AB32</summary>
+            PixelType_Gvsp_Coord3D_AB32 = unchecked((Int32)0x82403003),
+
+            /// <summary>Coord3D_AC32f_64</summary>
+            PixelType_Gvsp_Coord3D_AC32f_64 = unchecked((Int32)0x024000C2),
+
+            /// <summary>Coord3D_AC32f_Planar</summary>
+            PixelType_Gvsp_Coord3D_AC32f_Planar = 0x024000C3,
+
+            /// <summary>Coord3D_AC32</summary>
+            PixelType_Gvsp_Coord3D_AC32 = unchecked((Int32)0x82403004),
+
+            /// <summary>Coord3D_A32f</summary>
+            PixelType_Gvsp_Coord3D_A32f = 0x012000BD,
+
+            /// <summary>Coord3D_A32</summary>
+            PixelType_Gvsp_Coord3D_A32 = unchecked((Int32)0x81203005),
+
+            /// <summary>Coord3D_C32f</summary>
+            PixelType_Gvsp_Coord3D_C32f = 0x012000BF,
+
+            /// <summary>Coord3D_C32</summary>
+            PixelType_Gvsp_Coord3D_C32 = unchecked((Int32)0x81203006),
+
+            /// <summary>Coord3D_ABC16</summary>
+            PixelType_Gvsp_Coord3D_ABC16 = 0x023000b9,
+
+            /// <summary>Coord3D_C16</summary>
+            PixelType_Gvsp_Coord3D_C16 = 0x011000b8,
+
+            /// <summary>Float32</summary>
+            PixelType_Gvsp_Float32 = unchecked((Int32)0x81200001),
+
+            //无损压缩像素格式定义
+            /// <summary>HB_Mono8</summary>
+            PixelType_Gvsp_HB_Mono8 = unchecked((Int32)0x81080001),
+
+            /// <summary>HB_Mono10</summary>
+            PixelType_Gvsp_HB_Mono10 = unchecked((Int32)0x81100003),
+
+            /// <summary>HB_Mono10_Packed</summary>
+            PixelType_Gvsp_HB_Mono10_Packed = unchecked((Int32)0x810c0004),
+
+            /// <summary>HB_Mono12</summary>
+            PixelType_Gvsp_HB_Mono12 = unchecked((Int32)0x81100005),
+
+            /// <summary>HB_Mono12_Packed</summary>
+            PixelType_Gvsp_HB_Mono12_Packed = unchecked((Int32)0x810c0006),
+
+            /// <summary>HB_Mono16</summary>
+            PixelType_Gvsp_HB_Mono16 = unchecked((Int32)0x81100007),
+
+            /// <summary>HB_BayerGR8</summary>
+            PixelType_Gvsp_HB_BayerGR8 = unchecked((Int32)0x81080008),
+
+            /// <summary>HB_BayerRG8</summary>
+            PixelType_Gvsp_HB_BayerRG8 = unchecked((Int32)0x81080009),
+
+            /// <summary>HB_BayerGB8</summary>
+            PixelType_Gvsp_HB_BayerGB8 = unchecked((Int32)0x8108000a),
+
+            /// <summary>HB_BayerBG8</summary>
+            PixelType_Gvsp_HB_BayerBG8 = unchecked((Int32)0x8108000b),
+
+            /// <summary>HB_BayerRBGG8</summary>
+            PixelType_Gvsp_HB_BayerRBGG8 = unchecked((Int32)0x81080046),
+
+            /// <summary>HB_BayerGR10</summary>
+            PixelType_Gvsp_HB_BayerGR10 = unchecked((Int32)0x8110000c),
+
+            /// <summary>HB_BayerRG10</summary>
+            PixelType_Gvsp_HB_BayerRG10 = unchecked((Int32)0x8110000d),
+
+            /// <summary>HB_BayerGB10</summary>
+            PixelType_Gvsp_HB_BayerGB10 = unchecked((Int32)0x8110000e),
+
+            /// <summary>HB_BayerBG10</summary>
+            PixelType_Gvsp_HB_BayerBG10 = unchecked((Int32)0x8110000f),
+
+            /// <summary>HB_BayerGR12</summary>
+            PixelType_Gvsp_HB_BayerGR12 = unchecked((Int32)0x81100010),
+
+            /// <summary>HB_BayerRG12</summary>
+            PixelType_Gvsp_HB_BayerRG12 = unchecked((Int32)0x81100011),
+
+            /// <summary>HB_BayerGB12</summary>
+            PixelType_Gvsp_HB_BayerGB12 = unchecked((Int32)0x81100012),
+
+            /// <summary>HB_BayerBG12</summary>
+            PixelType_Gvsp_HB_BayerBG12 = unchecked((Int32)0x81100013),
+
+            /// <summary>HB_BayerGR10_Packed</summary>
+            PixelType_Gvsp_HB_BayerGR10_Packed = unchecked((Int32)0x810c0026),
+
+            /// <summary>HB_BayerRG10_Packed</summary>
+            PixelType_Gvsp_HB_BayerRG10_Packed = unchecked((Int32)0x810c0027),
+
+            /// <summary>HB_BayerGB10_Packed</summary>
+            PixelType_Gvsp_HB_BayerGB10_Packed = unchecked((Int32)0x810c0028),
+
+            /// <summary>HB_BayerBG10_Packed</summary>
+            PixelType_Gvsp_HB_BayerBG10_Packed = unchecked((Int32)0x810c0029),
+
+            /// <summary>HB_BayerGR12_Packed</summary>
+            PixelType_Gvsp_HB_BayerGR12_Packed = unchecked((Int32)0x810c002a),
+
+            /// <summary>HB_BayerRG12_Packed</summary>
+            PixelType_Gvsp_HB_BayerRG12_Packed = unchecked((Int32)0x810c002b),
+
+            /// <summary>HB_BayerGB12_Packed</summary>
+            PixelType_Gvsp_HB_BayerGB12_Packed = unchecked((Int32)0x810c002c),
+
+            /// <summary>HB_BayerBG12_Packed</summary>
+            PixelType_Gvsp_HB_BayerBG12_Packed = unchecked((Int32)0x810c002d),
+
+            /// <summary>HB_YUV422_Packed</summary>
+            PixelType_Gvsp_HB_YUV422_Packed = unchecked((Int32)0x8210001f),
+
+            /// <summary>HB_YUV422_YUYV_Packed</summary>
+            PixelType_Gvsp_HB_YUV422_YUYV_Packed = unchecked((Int32)0x82100032),
+
+            /// <summary>HB_RGB8_Packed</summary>
+            PixelType_Gvsp_HB_RGB8_Packed = unchecked((Int32)0x82180014),
+
+            /// <summary>HB_BGR8_Packed</summary>
+            PixelType_Gvsp_HB_BGR8_Packed = unchecked((Int32)0x82180015),
+
+            /// <summary>HB_RGBA8_Packed</summary>
+            PixelType_Gvsp_HB_RGBA8_Packed = unchecked((Int32)0x82200016),
+
+            /// <summary>HB_BGRA8_Packed</summary>
+            PixelType_Gvsp_HB_BGRA8_Packed = unchecked((Int32)0x82200017),
+
+            /// <summary>HB_RGB16_Packed</summary>
+            PixelType_Gvsp_HB_RGB16_Packed = unchecked((Int32)0x82300033),
+
+            /// <summary>HB_BGR16_Packed</summary>
+            PixelType_Gvsp_HB_BGR16_Packed = unchecked((Int32)0x8230004B),
+
+            /// <summary>HB_RGBA16_Packed</summary>
+            PixelType_Gvsp_HB_RGBA16_Packed = unchecked((Int32)0x82400064),
+
+            /// <summary>HB_BGRA16_Packed</summary>
+            PixelType_Gvsp_HB_BGRA16_Packed = unchecked((Int32)0x82400051),
+        }
         #endregion
 
         #region 设备错误码定义
-        /// <summary>Successed, no error</summary>
+        /// <summary>成功，无错误</summary>
         public const Int32 MV_OK = unchecked((Int32)0x00000000);
 
         // 通用错误码定义:范围0x80000000-0x800000FF
-        /// <summary>Error or invalid handle</summary>
+        /// <summary>错误或无效的句柄</summary>
         public const Int32 MV_E_HANDLE = unchecked((Int32)0x80000000);
-        /// <summary>Not supported function</summary>
+        /// <summary>不支持的功能</summary>
         public const Int32 MV_E_SUPPORT = unchecked((Int32)0x80000001);
-        /// <summary>Buffer overflow</summary>
+        /// <summary>缓存已满</summary>
         public const Int32 MV_E_BUFOVER = unchecked((Int32)0x80000002);
-        /// <summary>Function calling order error</summary>
+        /// <summary>函数调用顺序错误</summary>
         public const Int32 MV_E_CALLORDER = unchecked((Int32)0x80000003);
-        /// <summary>Incorrect parameter</summary>
+        /// <summary>错误的参数</summary>
         public const Int32 MV_E_PARAMETER = unchecked((Int32)0x80000004);
-        /// <summary>Applying resource failed</summary>
+        /// <summary>资源申请失败</summary>
         public const Int32 MV_E_RESOURCE = unchecked((Int32)0x80000006);
-        /// <summary>No data</summary>
+        /// <summary>无数据</summary>
         public const Int32 MV_E_NODATA = unchecked((Int32)0x80000007);
-        /// <summary>Precondition error, or running environment changed</summary>
+        /// <summary>前置条件有误，或运行环境已发生变化</summary>
         public const Int32 MV_E_PRECONDITION = unchecked((Int32)0x80000008);
-        /// <summary>Version mismatches</summary>
+        /// <summary>版本不匹配</summary>
         public const Int32 MV_E_VERSION = unchecked((Int32)0x80000009);
-        /// <summary>Insufficient memory</summary>
+        /// <summary>传入的内存空间不足</summary>
         public const Int32 MV_E_NOENOUGH_BUF = unchecked((Int32)0x8000000A);
-        /// <summary>Abnormal image, maybe incomplete image because of lost packet</summary>
+        /// <summary>异常图像，可能是丢包导致图像不完整</summary>
         public const Int32 MV_E_ABNORMAL_IMAGE = unchecked((Int32)0x8000000B);
-        /// <summary>Load library failed</summary>
+        /// <summary>动态导入DLL失败</summary>
         public const Int32 MV_E_LOAD_LIBRARY = unchecked((Int32)0x8000000C);
-        /// <summary>No Avaliable Buffer</summary>
+        /// <summary>没有可输出的缓存</summary>
         public const Int32 MV_E_NOOUTBUF = unchecked((Int32)0x8000000D);
-        /// <summary>Encryption error</summary>
+        /// <summary>加密错误</summary>
         public const Int32 MV_E_ENCRYPT = unchecked((Int32)0x8000000E);
-        /// <summary>Unknown error</summary>
+        /// <summary>打开文件出现错误</summary>
+        public const Int32 MV_E_OPENFILE = unchecked((Int32)0x8000000F);
+        /// <summary>未知的错误</summary>
         public const Int32 MV_E_UNKNOW = unchecked((Int32)0x800000FF);
 
         // GenICam系列错误:范围0x80000100-0x800001FF
-        /// <summary>General error</summary>
+        /// <summary>通用错误</summary>
         public const Int32 MV_E_GC_GENERIC = unchecked((Int32)0x80000100);
-        /// <summary>Illegal parameters</summary>
+        /// <summary>参数非法</summary>
         public const Int32 MV_E_GC_ARGUMENT = unchecked((Int32)0x80000101);
-        /// <summary>The value is out of range</summary>
+        /// <summary>值超出范围</summary>
         public const Int32 MV_E_GC_RANGE = unchecked((Int32)0x80000102);
-        /// <summary>Property</summary>
+        /// <summary>属性</summary>
         public const Int32 MV_E_GC_PROPERTY = unchecked((Int32)0x80000103);
-        /// <summary>Running environment error</summary>
+        /// <summary>运行环境有问题</summary>
         public const Int32 MV_E_GC_RUNTIME = unchecked((Int32)0x80000104);
-        /// <summary>Logical error</summary>
+        /// <summary>逻辑错误</summary>
         public const Int32 MV_E_GC_LOGICAL = unchecked((Int32)0x80000105);
-        /// <summary>Node accessing condition error</summary>
+        /// <summary>节点访问条件有误</summary>
         public const Int32 MV_E_GC_ACCESS = unchecked((Int32)0x80000106);
-        /// <summary>Timeout</summary>
+        /// <summary>超时</summary>
         public const Int32 MV_E_GC_TIMEOUT = unchecked((Int32)0x80000107);
-        /// <summary>Transformation exception</summary>
+        /// <summary>转换异常</summary>
         public const Int32 MV_E_GC_DYNAMICCAST = unchecked((Int32)0x80000108);
-        /// <summary>GenICam unknown error</summary>
+        /// <summary>GenICam未知错误</summary>
         public const Int32 MV_E_GC_UNKNOW = unchecked((Int32)0x800001FF);
 
         // GigE_STATUS对应的错误码:范围0x80000200-0x800002FF
-        /// <summary>The command is not supported by device</summary>
+        /// <summary>命令不被设备支持</summary>
         public const Int32 MV_E_NOT_IMPLEMENTED = unchecked((Int32)0x80000200);
-        /// <summary>The target address being accessed does not exist</summary>
+        /// <summary>访问的目标地址不存在</summary>
         public const Int32 MV_E_INVALID_ADDRESS = unchecked((Int32)0x80000201);
-        /// <summary>The target address is not writable</summary>
+        /// <summary>目标地址不可写</summary>
         public const Int32 MV_E_WRITE_PROTECT = unchecked((Int32)0x80000202);
-        /// <summary>No permission</summary>
+        /// <summary>设备无访问权限</summary>
         public const Int32 MV_E_ACCESS_DENIED = unchecked((Int32)0x80000203);
-        /// <summary>Device is busy, or network disconnected</summary>
+        /// <summary>设备忙，或网络断开</summary>
         public const Int32 MV_E_BUSY = unchecked((Int32)0x80000204);
-        /// <summary>Network data packet error</summary>
+        /// <summary>网络包数据错误</summary>
         public const Int32 MV_E_PACKET = unchecked((Int32)0x80000205);
-        /// <summary>Network error</summary>
+        /// <summary>网络相关错误</summary>
         public const Int32 MV_E_NETER = unchecked((Int32)0x80000206);
-        /// <summary>Device IP conflict</summary>
+        /// <summary>设备IP冲突</summary>
         public const Int32 MV_E_IP_CONFLICT = unchecked((Int32)0x80000221);
 
         // USB_STATUS对应的错误码:范围0x80000300-0x800003FF
-        /// <summary>Reading USB error</summary>
+        /// <summary>读usb出错</summary>
         public const Int32 MV_E_USB_READ = unchecked((Int32)0x80000300);
-        /// <summary>Writing USB error</summary>
+        /// <summary>写usb出错</summary>
         public const Int32 MV_E_USB_WRITE = unchecked((Int32)0x80000301);
-        /// <summary>Device exception</summary>
+        /// <summary>设备异常</summary>
         public const Int32 MV_E_USB_DEVICE = unchecked((Int32)0x80000302);
-        /// <summary>GenICam error</summary>
+        /// <summary>GenICam相关错误</summary>
         public const Int32 MV_E_USB_GENICAM = unchecked((Int32)0x80000303);
-        /// <summary>Insufficient bandwidth, this error code is newly added</summary>
+        /// <summary>带宽不足</summary>
         public const Int32 MV_E_USB_BANDWIDTH = unchecked((Int32)0x80000304);
-        /// <summary>Driver mismatch or unmounted drive</summary>
+        /// <summary>驱动不匹配或者未装驱动</summary>
         public const Int32 MV_E_USB_DRIVER = unchecked((Int32)0x80000305);
-        /// <summary>USB unknown error</summary>
+        /// <summary>USB未知的错误</summary>
         public const Int32 MV_E_USB_UNKNOW = unchecked((Int32)0x800003FF);
 
         // 升级时对应的错误码:范围0x80000400-0x800004FF
-        /// <summary>Firmware mismatches</summary>
+        /// <summary>升级固件不匹配</summary>
         public const Int32 MV_E_UPG_FILE_MISMATCH = unchecked((Int32)0x80000400);
-        /// <summary>Firmware language mismatches</summary>
+        /// <summary>升级固件语言不匹配</summary>
         public const Int32 MV_E_UPG_LANGUSGE_MISMATCH = unchecked((Int32)0x80000401);
-        /// <summary>Upgrading conflicted (repeated upgrading requests during device upgrade)</summary>
+        /// <summary>升级冲突（设备已经在升级了再次请求升级即返回此错误）</summary>
         public const Int32 MV_E_UPG_CONFLICT = unchecked((Int32)0x80000402);
-        /// <summary>Camera internal error during upgrade</summary>
+        /// <summary>升级时设备内部出现错误</summary>
         public const Int32 MV_E_UPG_INNER_ERR = unchecked((Int32)0x80000403);
-        /// <summary>Unknown error during upgrade</summary>
+        /// <summary>升级时未知错误</summary>
         public const Int32 MV_E_UPG_UNKNOW = unchecked((Int32)0x800004FF);
-
         #endregion
 
         #region 来自ISP算法库的错误码
@@ -2493,1714 +8586,39 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         public const Int32 MV_ALG_E_DENOISE_GAIN_BEYOND_RANGE = unchecked((Int32)0x1040200e);
         /// <summary>输入的噪声特性内存大小错误</summary>
         public const Int32 MV_ALG_E_DENOISE_NP_BUF_SIZE = unchecked((Int32)0x1040200f);
+        #endregion
 
         #endregion
 
-        #region 相机参数结构体定义
-        /// <summary>
-        /// ch: GigE设备信息 | en: GigE device information
-        /// </summary>
-        public struct MV_GIGE_DEVICE_INFO_EX
-        {
-            public UInt32 nIpCfgOption;
-            public UInt32 nIpCfgCurrent;                                        // IP configuration:bit31-static bit30-dhcp bit29-lla
-            public UInt32 nCurrentIp;                                           // curtent ip
-            public UInt32 nCurrentSubNetMask;                                   // curtent subnet mask
-            public UInt32 nDefultGateWay;                                       // current gateway
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chManufacturerName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chModelName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chDeviceVersion;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 48)]
-            public String chManufacturerSpecificInfo;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public String chSerialNumber;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public Byte[] chUserDefinedName;
+        #region ch: 从C/C++接口库导出的函数 | en: C/C++ Load Function
+        [DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        private static extern void OutputDebugString(string message);
 
-            public UInt32 nNetExport;                                           // 网口IP地址
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumInterfaces")]
+        private static extern Int32 MV_CC_EnumInterfaces(UInt32 nTLayerType, ref MV_INTERFACE_INFO_LIST pInterfaceInfoList);
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;
-        }
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_CreateInterface")]
+        private static extern Int32 MV_CC_CreateInterface(ref IntPtr handle, ref MV_INTERFACE_INFO pInterfaceInfo);
 
-        public struct MV_GIGE_DEVICE_INFO
-        {
-            public UInt32 nIpCfgOption;
-            public UInt32 nIpCfgCurrent;                                        // IP configuration:bit31-static bit30-dhcp bit29-lla
-            public UInt32 nCurrentIp;                                           // curtent ip
-            public UInt32 nCurrentSubNetMask;                                   // curtent subnet mask
-            public UInt32 nDefultGateWay;                                       // current gateway
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chManufacturerName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chModelName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public String chDeviceVersion;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 48)]
-            public String chManufacturerSpecificInfo;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public String chSerialNumber;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public String chUserDefinedName;
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_CreateInterfaceByID")]
+        private static extern Int32 MV_CC_CreateInterfaceByID(ref IntPtr handle, String pInterfaceID);
 
-            public UInt32 nNetExport;                                           // 网口IP地址
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_OpenInterface")]
+        private static extern Int32 MV_CC_OpenInterface(IntPtr handle, String pConfigFile);
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;
-        }
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_CloseInterface")]
+        private static extern Int32 MV_CC_CloseInterface(IntPtr handle);
 
-        /// <summary>
-        /// ch:信息结构体的最大缓存 | en: Max buffer size of information structs
-        /// </summary>
-        public const Int32 INFO_MAX_BUFFER_SIZE = 64;
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DestroyInterface")]
+        private static extern Int32 MV_CC_DestroyInterface(IntPtr handle);
 
-        /// <summary>
-        /// ch:USB3 设备信息 | en:USB3 device information
-        /// </summary>
-        public struct MV_USB3_DEVICE_INFO_EX
-        {
-            public Byte CrtlInEndPoint;                                             // 控制输入端点
-            public Byte CrtlOutEndPoint;                                            // 控制输出端点
-            public Byte StreamEndPoint;                                             // 流端点
-            public Byte EventEndPoint;                                              // 事件端点
-            public UInt16 idVendor;                                                 // 供应商ID号
-            public UInt16 idProduct;                                                // 产品ID号
-            public UInt32 nDeviceNumber;                                            // 设备索引号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceGUID;                                             // 设备GUID号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chVendorName;                                             // 供应商名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chModelName;                                              // 型号名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chFamilyName;                                             // 家族名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceVersion;                                          // 设备版本号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chManufacturerName;                                       // 制造商名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chSerialNumber;                                           // 序列号                                       
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public Byte[] chUserDefinedName;                                        // 用户自定义名字
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_Initialize")]
+        private static extern Int32 MV_CC_Initialize();
 
-            public UInt32 nbcdUSB;                                                  // 支持的USB协议
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_Finalize")]
+        private static extern Int32 MV_CC_Finalize();
 
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-            public UInt32[] nReserved;                                              // 保留字节
-        }
-
-        public struct MV_USB3_DEVICE_INFO
-        {
-            public Byte CrtlInEndPoint;                                         // 控制输入端点
-            public Byte CrtlOutEndPoint;                                        // 控制输出端点
-            public Byte StreamEndPoint;                                         // 流端点
-            public Byte EventEndPoint;                                          // 事件端点
-            public UInt16 idVendor;                                             // 供应商ID号
-            public UInt16 idProduct;                                            // 产品ID号
-            public UInt32 nDeviceNumber;                                        // 设备序列号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceGUID;                                             // 设备GUID号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chVendorName;                                             // 供应商名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chModelName;                                              // 型号名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chFamilyName;                                             // 家族名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceVersion;                                          // 设备版本号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chManufacturerName;                                       // 制造商名字
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chSerialNumber;                                           // 序列号
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chUserDefinedName;                                        // 用户自定义名字
-
-            public UInt32 nbcdUSB;                                              // 支持的USB协议
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        /// <summary>
-        /// ch:CamLink设备信息 | en:CamLink device information
-        /// </summary>
-        public struct MV_CamL_DEV_INFO
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chPortID;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chModelName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chFamilyName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceVersion;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chManufacturerName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chSerialNumber;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 38)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        /// <summary>
-        /// ch:设备信息 | en:Device information
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MV_CC_DEVICE_INFO
-        {
-            // common info 
-            public UInt16 nMajorVer;
-            public UInt16 nMinorVer;
-            public UInt32 nMacAddrHigh;
-            /// MAC 地址
-            public UInt32 nMacAddrLow;
-
-            public UInt32 nTLayerType;                                          // 设备传输层协议类型，e.g. MV_GIGE_DEVICE
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-
-            /// <summary>
-            /// ch:特定类型的设备信息 | en:Special devcie information
-            /// </summary>
-            [StructLayout(LayoutKind.Explicit, Size = 540)]
-            public struct SPECIAL_INFO
-            {
-                [FieldOffset(0)]
-                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 216)]
-                public Byte[] stGigEInfo;
-                [FieldOffset(0)]
-                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 536)]
-                public Byte[] stCamLInfo;
-                [FieldOffset(0)]
-                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 540)]
-                public Byte[] stUsb3VInfo;
-            }
-            public SPECIAL_INFO SpecialInfo;
-        }
-
-        public const Int32 MV_MAX_DEVICE_NUM = 256;
-
-        public struct MV_CC_DEVICE_INFO_LIST
-        {
-            public UInt32 nDeviceNum;                                           // 在线设备数量
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_DEVICE_NUM)]
-            public IntPtr[] pDeviceInfo;                                         // 支持最多256个设备
-        }
-
-        /// <summary>
-        /// ch:通过GenTL枚举到的Interface信息 | en:Interface Information with GenTL
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MV_GENTL_IF_INFO
-        {
-            // GenTL接口ID
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public String chInterfaceID;
-            // 传输层类型
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public String chTLType;
-            // 设备显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public String chDisplayName;
-            // GenTL的cti文件索引
-            public UInt32 nCtiIndex;
-            // 保留字节
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;
-        };
-
-        /// <summary>
-        /// ch:最大Interface数量 | en:Max num of interfaces
-        /// </summary>
-        public const Int32 MV_MAX_GENTL_IF_NUM = 256;
-
-        /// <summary>
-        /// ch:通过GenTL枚举到的设备信息列表 | en:Interface Information List with GenTL
-        /// </summary>
-        public struct MV_GENTL_IF_INFO_LIST
-        {
-            //ch:在线设备数量 | en:Online Interface Number
-            public UInt32 nInterfaceNum;
-            //ch:支持最多256个设备 | en:Support up to 256 Interfaces
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_GENTL_IF_NUM)]
-            public IntPtr[] pIFInfo;
-        };
-
-        /// <summary>
-        /// ch:通过GenTL枚举到的设备信息 | en:Device Information discovered by with GenTL
-        /// </summary>
-        public struct MV_GENTL_DEV_INFO
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chInterfaceID;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceID;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chVendorName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chModelName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chTLType;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chUserDefinedName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chSerialNumber;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = INFO_MAX_BUFFER_SIZE)]
-            public string chDeviceVersion;
-
-            public UInt32 nCtiIndex;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        /// <summary>
-        /// ch:最大GenTL设备数量 | en:Max num of GenTL devices
-        /// </summary>
-        public const Int32 MV_MAX_GENTL_DEV_NUM = 256;
-
-        /// <summary>
-        /// ch:GenTL设备列表 | en:GenTL devices list
-        /// </summary>
-        public struct MV_GENTL_DEV_INFO_LIST
-        {
-            public UInt32 nDeviceNum;                                           // 在线设备数量
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_GENTL_DEV_NUM)]
-            public IntPtr[] pDeviceInfo;                            // 支持最多256个设备
-        }
-
-        public struct MV_NETTRANS_INFO
-        {
-            public Int64 nReviceDataSize;                        // 已接收数据大小  [统计StartGrabbing和StopGrabbing之间的数据量]
-            public Int32 nThrowFrameCount;                       // 丢帧数量
-            public UInt32 nNetRecvFrameCount;
-            public Int64 nRequestResendPacketCount;              // 请求重发包数
-            public Int64 nResendPacketCount;                     // 重发包数
-        }
-
-        public struct MV_FRAME_OUT_INFO
-        {
-            public UInt16 nWidth;                                     // 图像宽
-            public UInt16 nHeight;                                    // 图像高
-            public MvGvspPixelType enPixelType;                       // 像素格式
-
-            public UInt32 nFrameNum;                                  // 帧号
-            public UInt32 nDevTimeStampHigh;                          // 时间戳高32位
-            public UInt32 nDevTimeStampLow;                           // 时间戳低32位
-            public UInt32 nReserved0;                                 // 保留，8字节对齐
-            public Int64 nHostTimeStamp;                             // 主机生成的时间戳
-
-            public UInt32 nFrameLen;
-
-            public UInt32 nLostPacket;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-            public UInt32[] nReserved;                                  // 保留字节
-        }
-
-        public struct MV_CHUNK_DATA_CONTENT
-        {
-            public IntPtr pChunkData;
-            public UInt32 nChunkID;
-            public UInt32 nChunkLen;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;                                  // 保留字节
-        }
-
-        public struct MV_FRAME_OUT_INFO_EX
-        {
-            public UInt16 nWidth;                                     // 图像宽
-            public UInt16 nHeight;                                    // 图像高
-            public MvGvspPixelType enPixelType;                       // 像素格式
-
-            public UInt32 nFrameNum;                                  // 帧号
-            public UInt32 nDevTimeStampHigh;                          // 时间戳高32位
-            public UInt32 nDevTimeStampLow;                           // 时间戳低32位
-            public UInt32 nReserved0;                                 // 保留，8字节对齐
-            public Int64 nHostTimeStamp;                             // 主机生成的时间戳
-
-            public UInt32 nFrameLen;
-
-            // 以下为chunk新增水印信息
-            // 设备水印时标
-            public UInt32 nSecondCount;
-            public UInt32 nCycleCount;
-            public UInt32 nCycleOffset;
-
-            public Single fGain;
-            public Single fExposureTime;
-            public UInt32 nAverageBrightness;     //平均亮度
-
-            // 白平衡相关
-            public UInt32 nRed;
-            public UInt32 nGreen;
-            public UInt32 nBlue;
-
-            public UInt32 nFrameCounter;
-            public UInt32 nTriggerIndex;      //触发计数
-
-            //Line 输入/输出
-            public UInt32 nInput;        //输入
-            public UInt32 nOutput;       //输出
-
-            // ROI区域
-            public UInt16 nOffsetX;
-            public UInt16 nOffsetY;
-
-            public UInt16 nChunkWidth;
-            public UInt16 nChunkHeight;
-
-            public UInt32 nLostPacket;
-            public UInt32 nUnparsedChunkNum;
-
-            [StructLayout(LayoutKind.Explicit)]
-            public struct UNPARSED_CHUNK_LIST
-            {
-                [FieldOffset(0)]
-                public IntPtr pUnparsedChunkContent;
-                [FieldOffset(0)]
-                public Int64 nAligning;
-            }
-            public UNPARSED_CHUNK_LIST UnparsedChunkList;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 36)]
-            public UInt32[] nReserved;                                  // 保留字节
-        }
-
-        public struct MV_FRAME_OUT
-        {
-            public IntPtr pBufAddr;
-
-            public MV_FRAME_OUT_INFO_EX stFrameInfo;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public UInt32[] nReserved;                                  // 保留字节
-        }
-
-        public enum MV_GRAB_STRATEGY
-        {
-            MV_GrabStrategy_OneByOne = 0,   // 从旧到新一帧一帧的获取图像（默认为该策略）
-            MV_GrabStrategy_LatestImagesOnly = 1,   // 获取列表中最新的一帧图像（同时清除列表中的其余图像）
-            MV_GrabStrategy_LatestImages = 2,   // 获取列表中最新的图像，个数由OutputQueueSize决定，范围为1-ImageNodeNum，设置成1等同于LatestImagesOnly
-                                                // ，设置成ImageNodeNum等同于OneByOne
-            MV_GrabStrategy_UpcomingImage = 3,   // 等待下一帧图像
-        };
-
-        public struct MV_DISPLAY_FRAME_INFO
-        {
-            public IntPtr hWnd;
-
-            public IntPtr pData;
-            public UInt32 nDataLen;
-
-            public UInt16 nWidth;                                     // 图像宽
-            public UInt16 nHeight;                                    // 图像高
-            public MvGvspPixelType enPixelType;                       // 像素格式
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                  // 保留字节
-        }
-
-        public enum MV_SAVE_IAMGE_TYPE
-        {
-            MV_Image_Undefined = 0,
-            MV_Image_Bmp = 1,
-            MV_Image_Jpeg = 2,
-            MV_Image_Png = 3,
-            MV_Image_Tif = 4,
-        };
-
-        public struct MV_SAVE_POINT_CLOUD_PARAM
-        {
-            public UInt32 nLinePntNum;                 // [IN]     每一行点的数量
-            public UInt32 nLineNum;                    // [IN]     行数
-
-            public MvGvspPixelType enSrcPixelType;     // [IN]     输入数据的像素格式
-            public IntPtr pSrcData;                    // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;                 // [IN]     输入数据大小
-
-            public IntPtr pDstBuf;                     // [OUT]    输出像素数据缓存
-            public UInt32 nDstBufSize;                 // [IN]     提供的输出缓冲区大小(nLinePntNum * nLineNum * (16*3 + 4) + 2048)
-            public UInt32 nDstBufLen;                  // [OUT]    输出像素数据缓存长度
-            public MV_SAVE_POINT_CLOUD_FILE_TYPE enPointCloudFileType;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;              // 保留字节
-        };
-
-        public struct MV_SAVE_IMAGE_PARAM
-        {
-            public IntPtr pData;              // [IN]     输入数据缓存
-            public UInt32 nDataLen;           // [IN]     输入数据大小
-            public MvGvspPixelType enPixelType;        // [IN]     输入数据的像素格式
-            public UInt16 nWidth;             // [IN]     图像宽
-            public UInt16 nHeight;            // [IN]     图像高
-
-            public IntPtr pImageBuffer;       // [OUT]    输出图片缓存
-            public UInt32 nImageLen;          // [OUT]    输出图片大小
-            public UInt32 nBufferSize;        // [IN]     提供的输出缓冲区大小
-            public MV_SAVE_IAMGE_TYPE enImageType;        // [IN]     输出图片格式
-
-        };
-
-        public struct MV_SAVE_IMAGE_PARAM_EX
-        {
-            public IntPtr pData;              // [IN]     输入数据缓存
-            public UInt32 nDataLen;           // [IN]     输入数据大小
-            public MvGvspPixelType enPixelType;        // [IN]     输入数据的像素格式
-            public UInt16 nWidth;             // [IN]     图像宽
-            public UInt16 nHeight;            // [IN]     图像高
-
-            public IntPtr pImageBuffer;       // [OUT]    输出图片缓存
-            public UInt32 nImageLen;          // [OUT]    输出图片大小
-            public UInt32 nBufferSize;        // [IN]     提供的输出缓冲区大小
-            public MV_SAVE_IAMGE_TYPE enImageType;        // [IN]     输出图片格式
-            public UInt32 nJpgQuality;        // [IN]     编码质量, (50-99]
-            public UInt32 iMethodValue;       // [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-            public UInt32[] nReserved;                       // 保留字节
-        };
-
-        public struct MV_SAVE_IMG_TO_FILE_PARAM
-        {
-            public MvGvspPixelType enPixelType;        // [IN]     输入数据的像素格式
-            public IntPtr pData;                       // [IN]     输入数据缓存
-            public UInt32 nDataLen;                    // [IN]     输入数据大小
-            public UInt16 nWidth;                      // [IN]     图像宽
-            public UInt16 nHeight;                     // [IN]     图像高
-            public MV_SAVE_IAMGE_TYPE enImageType;     // [IN]     输入图片格式
-            public UInt32 nQuality;                    // [IN]     编码质量, (0-100]
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-            public string pImagePath;                  // [IN]     输入文件路径
-            public UInt32 iMethodValue;                // [IN]     Bayer的插值方法 0-快速 1-均衡 2-最优（如果传入其它值则默认为最优）
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;              // 保留字节
-        };
-
-        public enum MV_IMG_ROTATION_ANGLE
-        {
-            MV_IMAGE_ROTATE_90 = 1,
-            MV_IMAGE_ROTATE_180 = 2,
-            MV_IMAGE_ROTATE_270 = 3,
-        };
-
-        public struct MV_CC_ROTATE_IMAGE_PARAM
-        {
-            public MvGvspPixelType enPixelType;         // [IN]     像素格式(仅支持Mono8/RGB24/BGR24)
-            public UInt32 nWidth;                       // [IN][OUT]     图像宽
-            public UInt32 nHeight;                      // [IN][OUT]     图像高
-
-            public IntPtr pSrcData;                     // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;                  // [IN]     输入数据大小
-
-            public IntPtr pDstBuf;                      // [OUT]    输出图片缓存
-            public UInt32 nDstBufLen;                   // [OUT]    输出图片大小
-            public UInt32 nDstBufSize;                  // [IN]     提供的输出缓冲区大小
-
-            public MV_IMG_ROTATION_ANGLE enRotationAngle;   // [IN]     旋转角度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        public enum MV_IMG_FLIP_TYPE
-        {
-            MV_FLIP_VERTICAL = 1,
-            MV_FLIP_HORIZONTAL = 2,
-        };
-
-        public struct MV_CC_FLIP_IMAGE_PARAM
-        {
-            public MvGvspPixelType enPixelType;         // [IN]     像素格式(仅支持Mono8/RGB24/BGR24)
-            public UInt32 nWidth;                       // [IN]     图像宽
-            public UInt32 nHeight;                      // [IN]     图像高
-
-            public IntPtr pSrcData;                     // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;                  // [IN]     输入数据大小
-
-            public IntPtr pDstBuf;                      // [OUT]    输出图片缓存
-            public UInt32 nDstBufLen;                   // [OUT]    输出图片大小
-            public UInt32 nDstBufSize;                  // [IN]     提供的输出缓冲区大小
-
-            public MV_IMG_FLIP_TYPE enFlipType;         // [IN]     翻转类型
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        public struct MV_PIXEL_CONVERT_PARAM
-        {
-            public UInt16 nWidth;             // [IN]     图像宽
-            public UInt16 nHeight;            // [IN]     图像高
-
-            public MvGvspPixelType enSrcPixelType;     // [IN]     源像素格式
-            public IntPtr pSrcData;           // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;        // [IN]     输入数据大小
-
-            public MvGvspPixelType enDstPixelType;     // [IN]     目标像素格式
-            public IntPtr pDstBuffer;         // [OUT]    输出数据缓存
-            public UInt32 nDstLen;            // [OUT]    输出数据大小
-            public UInt32 nDstBufferSize;     // [IN]     提供的输出缓冲区大小
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // Gamma类型
-        public enum MV_CC_GAMMA_TYPE
-        {
-            MV_CC_GAMMA_TYPE_NONE = 0,        // 不启用
-            MV_CC_GAMMA_TYPE_VALUE = 1,        // GAMMA值
-            MV_CC_GAMMA_TYPE_USER_CURVE = 2,        // GAMMA曲线，8位需要的长度：256*sizeof(unsigned char)
-                                                    //            10位需要的长度：1024*sizeof(unsigned short)
-                                                    //            12位需要的长度：4096*sizeof(unsigned short)
-                                                    //            16位需要的长度：65536*sizeof(unsigned short)
-            MV_CC_GAMMA_TYPE_LRGB2SRGB = 3,        // linear RGB to sRGB
-            MV_CC_GAMMA_TYPE_SRGB2LRGB = 4,        // sRGB to linear RGB
-        };
-
-        public struct MV_CC_GAMMA_PARAM
-        {
-            public MV_CC_GAMMA_TYPE enGammaType;        // [IN]     Gamma类型
-            public Single fGammaValue;                  // [IN]     Gamma值
-            public IntPtr pGammaCurveBuf;               // [IN]     Gamma曲线缓存
-            public UInt32 nGammaCurveBufLen;            // [IN]     Gamma曲线长度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        public struct MV_CC_CCM_PARAM
-        {
-            public Boolean bCCMEnable;                  // [IN]     是否启用CCM
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
-            public Int32[] nCCMat;                      // [IN]     CCM矩阵(-8192~8192)
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        public struct MV_CC_CCM_PARAM_EX
-        {
-            public Boolean bCCMEnable;                  // [IN]     是否启用CCM
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
-            public Int32[] nCCMat;                      // [IN]     量化3x3矩阵
-            public UInt32 nCCMScale;                    // [IN]     量化系数（2的整数幂）
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        public struct MV_CC_CLUT_PARAM
-        {
-            public Boolean bCLUTEnable;                 // [IN]     是否启用CLUT
-            public UInt32 nCLUTScale;                   // [IN]     量化系数(2的整数幂)
-            public UInt32 nCLUTSize;                    // [IN]     CLUT大小，建议值17
-            public IntPtr pCLUTBuf;                     // [OUT]    量化CLUT
-            public UInt32 nCLUTBufLen;                  // [IN]     量化CLUT缓存大小（nCLUTSize*nCLUTSize*nCLUTSize*sizeof(int)*3）
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 对比度调节参数
-        public struct MV_CC_CONTRAST_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度(最小8)
-            public UInt32 nHeight;            // [IN]     图像高度(最小8)
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-
-            public IntPtr pDstBuf;            // [OUT]    输出像素数据缓存
-            public UInt32 nDstBufSize;        // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;         // [OUT]    输出像素数据缓存长度
-
-            public UInt32 nContrastFactor;    // [IN]     对比度值，范围:[1, 10000]
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 锐化参数
-        public struct MV_CC_SHARPEN_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度(最小8)
-            public UInt32 nHeight;            // [IN]     图像高度(最小8)
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-
-            public IntPtr pDstBuf;            // [OUT]    输出像素数据缓存
-            public UInt32 nDstBufSize;        // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;         // [OUT]    输出像素数据缓存长度
-
-            public UInt32 nSharpenAmount;     // [IN]     锐度调节强度，范围:[0, 500]
-            public UInt32 nSharpenRadius;     // [IN]     锐度调节半径（半径越大，耗时越长），范围:[1, 21]
-            public UInt32 nSharpenThreshold;  // [IN]     锐度调节阈值，范围:[0, 255]
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 色彩校正参数（包括CCM和CLUT）
-        public struct MV_CC_COLOR_CORRECT_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度
-            public UInt32 nHeight;            // [IN]     图像高度
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-
-            public IntPtr pDstBuf;            // [OUT]    输出像素数据缓存
-            public UInt32 nDstBufSize;        // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;         // [OUT]    输出像素数据缓存长度
-
-            public UInt32 nImageBit;          // [IN]     输入有效图像位数，8 or 10 or 12 or 16
-            public MV_CC_GAMMA_PARAM stGammaParam;       // [IN]     输入Gamma信息
-            public MV_CC_CCM_PARAM_EX stCCMParam;         // [IN]     输入CCM信息
-            public MV_CC_CLUT_PARAM stCLUTParam;        // [IN]     输入CLUT信息
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 矩形ROI参数
-        public struct MV_CC_RECT_I
-        {
-            public UInt32 nX;                        // [IN]     矩形左上角X轴坐标
-            public UInt32 nY;                        // [IN]     矩形左上角Y轴坐标
-            public UInt32 nWidth;                    // [IN]     矩形宽度
-            public UInt32 nHeight;                   // [IN]     矩形高度
-        };
-
-        // 噪声估计参数
-        public struct MV_CC_NOISE_ESTIMATE_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度
-            public UInt32 nHeight;            // [IN]     图像高度
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-
-            public IntPtr pstROIRect;         // [IN]     图像ROI
-            public UInt32 nROINum;            // [IN]     ROI个数
-
-            //Bayer域噪声估计参数，Mono8/RGB域无效
-            public UInt32 nNoiseThreshold;    // [IN]     噪声阈值[0-4095]
-
-            public IntPtr pNoiseProfile;      // [OUT]    输出噪声特性
-            public UInt32 nNoiseProfileSize;  // [IN]     提供的输出缓冲区大小
-            public UInt32 nNoiseProfileLen;   // [OUT]    输出噪声特性长度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 空域降噪参数
-        public struct MV_CC_SPATIAL_DENOISE_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度
-            public UInt32 nHeight;            // [IN]     图像高度
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-
-            public IntPtr pDstBuf;            // [OUT]    输出降噪后的数据
-            public UInt32 nDstBufSize;        // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;         // [OUT]    输出降噪后的数据长度
-
-            public IntPtr pNoiseProfile;      // [IN]     输入噪声特性
-            public UInt32 nNoiseProfileLen;   // [IN]     输入噪声特性长度
-
-            //Bayer域空域降噪算法参数，Mono8/RGB域无效
-            public UInt32 nBayerDenoiseStrength;// [IN]     降噪强度(0-100)
-            public UInt32 nBayerSharpenStrength;// [IN]     锐化强度(0-32)
-            public UInt32 nBayerNoiseCorrect; // [IN]     噪声校正系数(0-1280)
-
-            //Mono8/RGB域空域降噪算法参数，Bayer域无效
-            public UInt32 nNoiseCorrectLum;   // [IN]     亮度校正系数(1-2000)
-            public UInt32 nNoiseCorrectChrom; // [IN]     色调校正系数(1-2000)
-            public UInt32 nStrengthLum;       // [IN]     亮度降噪强度(0-100)
-            public UInt32 nStrengthChrom;     // [IN]     色调降噪强度(0-100)
-            public UInt32 nStrengthSharpen;   // [IN]     锐化强度(1-1000)
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // LSC标定参数
-        public struct MV_CC_LSC_CALIB_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度(16~65536)
-            public UInt32 nHeight;            // [IN]     图像高度(16~65536)
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-
-            public IntPtr pCalibBuf;          // [OUT]    输出标定表缓存
-            public UInt32 nCalibBufSize;      // [IN]     提供的标定表缓冲大小（nWidth*nHeight*sizeof(unsigned short)）
-            public UInt32 nCalibBufLen;       // [OUT]    输出标定表缓存长度
-
-            public UInt32 nSecNumW;           // [IN]     宽度分块数
-            public UInt32 nSecNumH;           // [IN]     高度分块数
-            public UInt32 nPadCoef;           // [IN]     边缘填充系数，范围1~5
-            public UInt32 nCalibMethod;       // [IN]     标定方式，0-中心为基准
-                                              //                    1-最亮区域为基准
-                                              //                    2-目标亮度
-
-            public UInt32 nTargetGray;        // [IN]     目标亮度（8bits，[0,255])
-                                              //                  （10bits，[0,1023])
-                                              //                  （12bits，[0,4095])
-                                              //                  （16bits，[0,65535])
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // LSC校正参数
-        public struct MV_CC_LSC_CORRECT_PARAM
-        {
-            public UInt32 nWidth;             // [IN]     图像宽度(16~65536)
-            public UInt32 nHeight;            // [IN]     图像高度(16~65536)
-            public MvGvspPixelType enPixelType;    // [IN]     输入的像素格式
-            public IntPtr pSrcBuf;            // [IN]     输入图像缓存
-            public UInt32 nSrcBufLen;         // [IN]     输入图像缓存长度
-
-            public IntPtr pDstBuf;            // [OUT]    输出像素数据缓存
-            public UInt32 nDstBufSize;        // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;         // [OUT]    输出像素数据缓存长度
-
-            public IntPtr pCalibBuf;          // [IN]     输入校正表缓存
-            public UInt32 nCalibBufLen;       // [IN]     输入校正表缓存长度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;                       // 保留字节
-        };
-
-        // 噪声特性类型
-        public enum MV_CC_BAYER_NOISE_FEATURE_TYPE
-        {
-            MV_CC_BAYER_NOISE_FEATURE_TYPE_INVALID = 0, // 无效 
-            MV_CC_BAYER_NOISE_FEATURE_TYPE_PROFILE = 1, // 噪声曲线
-            MV_CC_BAYER_NOISE_FEATURE_TYPE_LEVEL = 2, // 噪声水平
-            MV_CC_BAYER_NOISE_FEATURE_TYPE_DEFAULT = 2, // 默认值
-        };
-
-        public struct MV_CC_BAYER_NOISE_PROFILE_INFO
-        {
-            public UInt32 nVersion;           // 版本
-            public MV_CC_BAYER_NOISE_FEATURE_TYPE enNoiseFeatureType;  // 噪声特性类型
-            public MvGvspPixelType enPixelType;    // 图像格式
-            public Int32 nNoiseLevel;        // 平均噪声水平
-            public UInt32 nCurvePointNum;     // 曲线点数
-            public IntPtr nNoiseCurve;        // 噪声曲线
-            public IntPtr nLumCurve;          // 亮度曲线
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;               // 保留字节
-        };
-
-        public struct MV_CC_BAYER_NOISE_ESTIMATE_PARAM
-        {
-            public UInt32 nWidth;               // [IN]     图像宽(大于等于8)
-            public UInt32 nHeight;              // [IN]     图像高(大于等于8)
-            public MvGvspPixelType enPixelType; // [IN]     像素格式
-
-            public IntPtr pSrcData;             // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;          // [IN]     输入数据大小
-
-            public UInt32 nNoiseThreshold;      // [IN]     噪声阈值(0-4095)
-
-            public IntPtr pCurveBuf;            // [IN]     用于存储噪声曲线和亮度曲线（需要外部分配，缓存大小：4096 * sizeof(int) * 2）
-            public MV_CC_BAYER_NOISE_PROFILE_INFO stNoiseProfile;   // [OUT]    降噪特性信息
-
-            public UInt32 nThreadNum;           // [IN]     线程数量，0表示算法库根据硬件自适应；1表示单线程（默认）；大于1表示线程数目
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;               // 保留字节
-        };
-
-        public struct MV_CC_BAYER_SPATIAL_DENOISE_PARAM
-        {
-            public UInt32 nWidth;               // [IN]     图像宽(大于等于8)
-            public UInt32 nHeight;              // [IN]     图像高(大于等于8)
-            public MvGvspPixelType enPixelType; // [IN]     像素格式
-
-            public IntPtr pSrcData;             // [IN]     输入数据缓存
-            public UInt32 nSrcDataLen;          // [IN]     输入数据大小
-
-            public IntPtr pDstBuf;              // [OUT]    输出降噪后的数据
-            public UInt32 nDstBufSize;          // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;           // [OUT]    输出降噪后的数据长度
-
-            public MV_CC_BAYER_NOISE_PROFILE_INFO stNoiseProfile;   // [IN]    降噪特性信息(来源于噪声估计)
-            public UInt32 nDenoiseStrength;     // [IN]     降噪强度(0-100) 
-            public UInt32 nSharpenStrength;     // [IN]     锐化强度(0-32)
-            public UInt32 nNoiseCorrect;        // [IN]     噪声校正系数(0-1280)
-
-            public UInt32 nThreadNum;           // [IN]     线程数量，0表示算法库根据硬件自适应；1表示单线程（默认）；大于1表示线程数目
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;               // 保留字节
-        };
-
-        public struct MV_CC_FRAME_SPEC_INFO
-        {
-            //设备水印时标
-            public UInt32 nSecondCount;         // [OUT]     秒数
-            public UInt32 nCycleCount;          // [OUT]     周期数
-            public UInt32 nCycleOffset;         // [OUT]     周期偏移量
-
-            public Single fGain;                // [OUT]     增益
-            public Single fExposureTime;        // [OUT]     曝光时间
-            public UInt32 nAverageBrightness;   // [OUT]     平均亮度
-
-            //白平衡相关
-            public UInt32 nRed;                 // [OUT]     红色
-            public UInt32 nGreen;               // [OUT]     绿色
-            public UInt32 nBlue;                // [OUT]     蓝色
-
-            public UInt32 nFrameCounter;        // [OUT]     总帧数
-            public UInt32 nTriggerIndex;        // [OUT]     触发计数
-
-            public UInt32 nInput;               // [OUT]     输入
-            public UInt32 nOutput;              // [OUT]     输出
-
-            public UInt16 nOffsetX;             // [OUT]     水平偏移量
-            public UInt16 nOffsetY;             // [OUT]     垂直偏移量
-            public UInt16 nFrameWidth;          // [OUT]     水印宽
-            public UInt16 nFrameHeight;         // [OUT]     水印高
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public UInt32[] nRes;               // 保留字节
-        };
-
-        public struct MV_CC_HB_DECODE_PARAM
-        {
-            public IntPtr pSrcBuf;              // [IN]     输入数据缓存
-            public UInt32 nSrcLen;              // [IN]     输入数据大小
-
-            public UInt32 nWidth;               // [OUT]    图像宽
-            public UInt32 nHeight;              // [OUT]    图像高
-            public IntPtr pDstBuf;              // [OUT]    输出数据缓存
-            public UInt32 nDstBufSize;          // [IN]     提供的输出缓冲区大小
-            public UInt32 nDstBufLen;           // [OUT]    输出数据大小
-            public MvGvspPixelType enDstPixelType;  // [OUT]     输出的像素格式
-
-            public MV_CC_FRAME_SPEC_INFO stFrameSpecInfo;   // [OUT]    水印信息
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;               // 保留字节
-        };
-
-        // 录像格式定义
-        public enum MV_RECORD_FORMAT_TYPE
-        {
-            MV_FormatType_Undefined = 0,
-            MV_FormatType_AVI = 1,
-        };
-
-        // ch:保存3D数据格式 | en:Save 3D file
-        public enum MV_SAVE_POINT_CLOUD_FILE_TYPE
-        {
-            MV_PointCloudFile_Undefined = 0,
-            MV_PointCloudFile_PLY = 1,
-            MV_PointCloudFile_CSV = 2,
-            MV_PointCloudFile_OBJ = 3,
-        };
-
-        public struct MV_CC_RECORD_PARAM
-        {
-            public MvGvspPixelType enPixelType;// [IN]     输入数据的像素格式
-
-            public UInt16 nWidth;              // [IN]     图像宽(指定目标参数时需为8的倍数)
-            public UInt16 nHeight;             // [IN]     图像高(指定目标参数时需为8的倍数)
-
-            public Single fFrameRate;          // [IN]     帧率fps(大于1/16)
-            public UInt32 nBitRate;            // [IN]     码率kbps(128kbps-16Mbps)
-
-            public MV_RECORD_FORMAT_TYPE enRecordFmtType;// [IN]     录像格式
-
-            public String strFilePath;         // [IN]     录像文件存放路径
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;              // 保留字节
-        };
-
-        public struct MV_CC_INPUT_FRAME_INFO
-        {
-            public IntPtr pData;              // [IN]     图像数据指针
-            public UInt32 nDataLen;           // [IN]     图像大小
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nRes;              // 保留字节
-        };
-
-        // 采集模式
-        public enum MV_CAM_ACQUISITION_MODE
-        {
-            MV_ACQ_MODE_SINGLE = 0,            // 单帧模式
-            MV_ACQ_MODE_MUTLI = 1,            // 多帧模式
-            MV_ACQ_MODE_CONTINUOUS = 2,            // 持续采集模式
-        };
-
-        // 增益模式
-        public enum MV_CAM_GAIN_MODE
-        {
-            MV_GAIN_MODE_OFF = 0,            // 关闭
-            MV_GAIN_MODE_ONCE = 1,            // 一次
-            MV_GAIN_MODE_CONTINUOUS = 2,            // 连续
-        };
-
-        // 曝光模式
-        public enum MV_CAM_EXPOSURE_MODE
-        {
-            MV_EXPOSURE_MODE_TIMED = 0,            // Timed
-            MV_EXPOSURE_MODE_TRIGGER_WIDTH = 1,            // TriggerWidth
-        };
-
-        // 自动曝光模式
-        public enum MV_CAM_EXPOSURE_AUTO_MODE
-        {
-            MV_EXPOSURE_AUTO_MODE_OFF = 0,            // 关闭
-            MV_EXPOSURE_AUTO_MODE_ONCE = 1,            // 一次
-            MV_EXPOSURE_AUTO_MODE_CONTINUOUS = 2,            // 连续
-        };
-
-        public enum MV_CAM_TRIGGER_MODE
-        {
-            MV_TRIGGER_MODE_OFF = 0,            // 关闭
-            MV_TRIGGER_MODE_ON = 1,            // 打开
-        };
-
-        public enum MV_CAM_GAMMA_SELECTOR
-        {
-            MV_GAMMA_SELECTOR_USER = 1,
-            MV_GAMMA_SELECTOR_SRGB = 2,
-        };
-
-        public enum MV_CAM_BALANCEWHITE_AUTO
-        {
-            MV_BALANCEWHITE_AUTO_OFF = 0,
-            MV_BALANCEWHITE_AUTO_ONCE = 2,
-            MV_BALANCEWHITE_AUTO_CONTINUOUS = 1,            // 连续
-        }
-
-        public enum MV_CAM_TRIGGER_SOURCE
-        {
-            MV_TRIGGER_SOURCE_LINE0 = 0,
-            MV_TRIGGER_SOURCE_LINE1 = 1,
-            MV_TRIGGER_SOURCE_LINE2 = 2,
-            MV_TRIGGER_SOURCE_LINE3 = 3,
-            MV_TRIGGER_SOURCE_COUNTER0 = 4,
-
-            MV_TRIGGER_SOURCE_SOFTWARE = 7,
-            MV_TRIGGER_SOURCE_FrequencyConverter = 8,
-        };
-
-        public enum MV_GIGE_TRANSMISSION_TYPE
-        {
-            MV_GIGE_TRANSTYPE_UNICAST = 0x0,                // ch:表示单播(默认) | en:Unicast mode
-            MV_GIGE_TRANSTYPE_MULTICAST = 0x1,                // ch:表示组播 | en:Multicast mode
-            MV_GIGE_TRANSTYPE_LIMITEDBROADCAST = 0x2,                // ch:表示局域网内广播，暂不支持 | en:Limited broadcast mode,not support
-            MV_GIGE_TRANSTYPE_SUBNETBROADCAST = 0x3,                // ch:表示子网内广播，暂不支持 | en:Subnet broadcast mode,not support
-            MV_GIGE_TRANSTYPE_CAMERADEFINED = 0x4,                // ch:表示从相机获取，暂不支持 | en:Transtype from camera,not support
-            MV_GIGE_TRANSTYPE_UNICAST_DEFINED_PORT = 0x5,                // ch:表示用户自定义应用端接收图像数据Port号 | en:User Defined Receive Data Port
-            MV_GIGE_TRANSTYPE_UNICAST_WITHOUT_RECV = 0x00010000,         // ch:表示设置了单播，但本实例不接收图像数据 | en:Unicast without receive data
-            MV_GIGE_TRANSTYPE_MULTICAST_WITHOUT_RECV = 0x00010001,         // ch:表示组播模式，但本实例不接收图像数据 | en:Multicast without receive data
-        };
-
-        // GigEVision IP Configuration
-        public const Int32 MV_IP_CFG_STATIC = 0x05000000;
-        public const Int32 MV_IP_CFG_DHCP = 0x06000000;
-        public const Int32 MV_IP_CFG_LLA = 0x04000000;
-
-        // GigEVision Net Transfer Mode
-        public const Int32 MV_NET_TRANS_DRIVER = 0x00000001;
-        public const Int32 MV_NET_TRANS_SOCKET = 0x00000002;
-
-        // CameraLink Baud Rates (CLUINT32)
-        public const Int32 MV_CAML_BAUDRATE_9600 = 0x00000001;
-        public const Int32 MV_CAML_BAUDRATE_19200 = 0x00000002;
-        public const Int32 MV_CAML_BAUDRATE_38400 = 0x00000004;
-        public const Int32 MV_CAML_BAUDRATE_57600 = 0x00000008;
-        public const Int32 MV_CAML_BAUDRATE_115200 = 0x00000010;
-        public const Int32 MV_CAML_BAUDRATE_230400 = 0x00000020;
-        public const Int32 MV_CAML_BAUDRATE_460800 = 0x00000040;
-        public const Int32 MV_CAML_BAUDRATE_921600 = 0x00000080;
-        public const Int32 MV_CAML_BAUDRATE_AUTOMAX = 0x40000000;
-
-        // 信息类型
-        public const Int32 MV_MATCH_TYPE_NET_DETECT = 0x00000001;      // 网络流量和丢包信息
-        public const Int32 MV_MATCH_TYPE_USB_DETECT = 0x00000002;      // host接收到来自U3V设备的字节总数
-
-        public const Int32 MV_MAX_XML_DISC_STRLEN_C = 512;
-        public const Int32 MV_MAX_XML_NODE_STRLEN_C = 64;
-        public const Int32 MV_MAX_XML_NODE_NUM_C = 128;
-        public const Int32 MV_MAX_XML_SYMBOLIC_NUM = 64;
-        public const Int32 MV_MAX_XML_STRVALUE_STRLEN_C = 64;
-        public const Int32 MV_MAX_XML_PARENTS_NUM = 8;
-        public const Int32 MV_MAX_XML_SYMBOLIC_STRLEN_C = 64;
-
-        public struct MV_ALL_MATCH_INFO
-        {
-            public UInt32 nType;                                  // 需要输出的信息类型，e.g. MV_MATCH_TYPE_NET_DETECT
-            public IntPtr pInfo;                                  // 输出的信息缓存，由调用者分配
-            public UInt32 nInfoSize;                              // 信息缓存的大小
-        }
-
-        public struct MV_MATCH_INFO_NET_DETECT
-        {
-            public Int64 nReviceDataSize;    // 已接收数据大小  [统计StartGrabbing和StopGrabbing之间的数据量]
-            public Int64 nLostPacketCount;   // 丢失的包数量
-            public UInt32 nLostFrameCount;    // 丢帧数量
-            public UInt32 nNetRecvFrameCount;
-            public Int64 nRequestResendPacketCount;// 请求重发包数
-            public Int64 nResendPacketCount;  // 重发包数
-        }
-
-        public struct MV_MATCH_INFO_USB_DETECT
-        {
-            public Int64 nReviceDataSize;      // 已接收数据大小    [统计OpenDevicce和CloseDevice之间的数据量]
-            public UInt32 nRevicedFrameCount;   // 已收到的帧数
-            public UInt32 nErrorFrameCount;     // 错误帧数
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-            public UInt32[] nReserved;                       // 保留字节
-        }
-
-        public struct MV_IMAGE_BASIC_INFO
-        {
-            // width
-            public UInt16 nWidthValue;
-            public UInt16 nWidthMin;
-            public UInt32 nWidthMax;
-            public UInt32 nWidthInc;
-
-            // height
-            public UInt32 nHeightValue;
-            public UInt32 nHeightMin;
-            public UInt32 nHeightMax;
-            public UInt32 nHeightInc;
-
-            // framerate
-            public Single fFrameRateValue;
-            public Single fFrameRateMin;
-            public Single fFrameRateMax;
-
-            // 像素格式
-            public UInt32 enPixelType;                            // 当前的像素格式
-            public UInt32 nSupportedPixelFmtNum;                  // 支持的像素格式种类
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
-            public UInt32[] enPixelList;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        //  异常消息类型
-        public const Int32 MV_EXCEPTION_DEV_DISCONNECT = 0x00008001;      // 设备断开连接
-        public const Int32 MV_EXCEPTION_VERSION_CHECK = 0x00008002;      // SDK与驱动版本不匹配
-
-        // 设备的访问模式
-
-        public const Int32 MV_ACCESS_Exclusive = 1;// 独占权限，其他APP只允许读CCP寄存器
-        public const Int32 MV_ACCESS_ExclusiveWithSwitch = 2;// 可以从5模式下抢占权限，然后以独占权限打开
-        public const Int32 MV_ACCESS_Control = 3;// 控制权限，其他APP允许读所有寄存器
-        public const Int32 MV_ACCESS_ControlWithSwitch = 4;// 可以从5的模式下抢占权限，然后以控制权限打开
-        public const Int32 MV_ACCESS_ControlSwitchEnable = 5;// 以可被抢占的控制权限打开
-        public const Int32 MV_ACCESS_ControlSwitchEnableWithKey = 6;// 可以从5的模式下抢占权限，然后以可被抢占的控制权限打开
-        public const Int32 MV_ACCESS_Monitor = 7;// 读模式打开设备，适用于控制权限下
-
-        // 每个节点对应的接口类型
-        public enum MV_XML_InterfaceType
-        {
-            IFT_IValue,                                                         // IValue interface
-            IFT_IBase,                                                          // IBase interface
-            IFT_IInteger,                                                       // IInteger interface
-            IFT_IBoolean,                                                       // IBoolean interface
-            IFT_ICommand,                                                       // ICommand interface
-            IFT_IFloat,                                                         // IFloat interface
-            IFT_IString,                                                        // IString interface
-            IFT_IRegister,                                                      // IRegister interface
-            IFT_ICategory,                                                      // ICategory interface
-            IFT_IEnumeration,                                                   // IEnumeration interface
-            IFT_IEnumEntry,                                                     // IEnumEntry interface
-            IFT_IPort                                                           // IPort interface
-        };
-
-        public enum MV_XML_AccessMode
-        {
-            AM_NI,                                                              // Not implemented
-            AM_NA,                                                              // Not available
-            AM_WO,                                                              // Write Only
-            AM_RO,                                                              // Read Only
-            AM_RW,                                                              // Read and Write
-            AM_Undefined,                                                       // Object is not yet initialized
-            AM_CycleDetect                                                      // used internally for AccessMode cycle detection
-        };
-
-        public enum MV_XML_Visibility
-        {
-            V_Beginner = 0,                                                     // Always visible
-            V_Expert = 1,                                                     // Visible for experts or Gurus
-            V_Guru = 2,                                                     // Visible for Gurus
-            V_Invisible = 3,                                                     // Not Visible
-            V_Undefined = 99                                                     // Object is not yet initialized
-        };
-
-        //Event事件回调信息
-        public const Int32 MAX_EVENT_NAME_SIZE = 128;//相机Event事件名称最大长度
-
-        public struct MV_EVENT_OUT_INFO
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_EVENT_NAME_SIZE)]
-            public string EventName;
-
-            public UInt16 nEventID;                           //Event号
-            public UInt16 nStreamChannel;                     //流通到序号
-
-            public UInt32 nBlockIdHigh;                       //帧号高位
-            public UInt32 nBlockIdLow;                        //帧号低位
-
-            public UInt32 nTimestampHigh;                     //时间戳高位
-            public UInt32 nTimestampLow;                      //时间戳低位
-
-            public IntPtr pEventData;                         //Event数据
-            public UInt32 nEventDataSize;                     //Event数据长度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public UInt32[] nReserved;                                          // 保留字节
-        };
-
-        // 文件存取
-        public struct MV_CC_FILE_ACCESS
-        {
-            public String pUserFileName;                         //用户文件名
-            public String pDevFileName;                          //设备文件名
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        // 文件存取进度
-        public struct MV_CC_FILE_ACCESS_PROGRESS
-        {
-            public Int64 nCompleted;                         //已完成的长度
-            public Int64 nTotal;                             //总长度
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        // 传输模式，可以为单播模式、组播模式等
-        public struct MV_CC_TRANSMISSION_TYPE
-        {
-            public MV_GIGE_TRANSMISSION_TYPE enTransmissionType; //传输模式
-            public UInt32 nDestIp;                                 //目标IP，组播模式下有意义
-            public UInt16 nDestPort;                             //目标Port，组播模式下有意义
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        // 动作命令信息
-        public struct MV_ACTION_CMD_INFO
-        {
-            public UInt32 nDeviceKey;        //设备密钥
-            public UInt32 nGroupKey;         //组键
-            public UInt32 nGroupMask;        //组掩码
-
-            public UInt32 bActionTimeEnable; //只有设置成1时Action Time才有效，非1时无效
-            public Int64 nActionTime;       //预定的时间，和主频有关
-
-            public String pBroadcastAddress; //广播包地址
-            public UInt32 nTimeOut;          //等待ACK的超时时间，如果为0表示不需要ACK
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_ACTION_CMD_RESULT
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)]
-            public String strDeviceAddress;       //IP address of the device
-
-            public Int32 nStatus;                 //status code returned by the device
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_ACTION_CMD_RESULT_LIST
-        {
-            public UInt32 nNumResults;                 //返回值个数
-
-            public IntPtr pResults;
-        }
-
-        public struct MV_XML_NODE_FEATURE
-        {
-            public MV_XML_InterfaceType enType;                                 // 节点类型
-            public MV_XML_Visibility enVisivility;                           // 是否可见
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_NODES_LIST
-        {
-            public UInt32 nNodeNum;                               // 节点个数
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_NODE_NUM_C)]
-            public MV_XML_NODE_FEATURE[] stNodes;
-        }
-
-        public struct MVCC_INTVALUE
-        {
-            public UInt32 nCurValue;                              // 当前值
-            public UInt32 nMax;
-            public UInt32 nMin;
-            public UInt32 nInc;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MVCC_INTVALUE_EX
-        {
-            public Int64 nCurValue;                              // 当前值
-            public Int64 nMax;
-            public Int64 nMin;
-            public Int64 nInc;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MVCC_FLOATVALUE
-        {
-            public Single fCurValue;                              // 当前值
-            public Single fMax;
-            public Single fMin;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MVCC_ENUMVALUE
-        {
-            public UInt32 nCurValue;                              // 当前值
-            public UInt32 nSupportedNum;                          // 有效数据个数
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
-            public UInt32[] nSupportValue;                                      // 保留字节
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MVCC_STRINGVALUE
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-            public string chCurValue;                                           // 当前值
-
-            public Int64 nMaxLength;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Integer
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                           // 是否可见
-            public MV_XML_AccessMode enAccessMode;                           // 访问模式
-            public Int32 bIsLocked;                              // 是否锁定。0-否；1-是
-            public Int64 nValue;                                 // 当前值
-            public Int64 nMinValue;                              // 最小值
-            public Int64 nMaxValue;                              // 最大值
-            public Int64 nIncrement;                             // 增量
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Boolean
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-            public bool bValue;                                                 // 当前值
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Command
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Float
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-            public Double dfValue;                                              // 当前值
-            public Double dfMinValue;                                           // 最小值
-            public Double dfMaxValue;                                           // 最大值
-            public Double dfIncrement;                                          // 增量
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_String
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_STRVALUE_STRLEN_C)]
-            public string strValue;                                              // 当前值
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Register
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-            public Int64 nAddrValue;                                            // 当前值
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Category
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_EnumEntry
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public Int32 bIsImplemented;
-            public Int32 nParentsNum;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_PARENTS_NUM)]
-            public MV_XML_NODE_FEATURE[] stParentsList;
-
-            public MV_XML_Visibility enVisivility;                           //是否可见
-            public Int64 nValue;                                 // 当前值
-            public MV_XML_AccessMode enAccessMode;                           // 访问模式
-            public Int32 bIsLocked;                              // 是否锁定。0-否；1-是
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct StrSymbolic
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_SYMBOLIC_STRLEN_C)]
-            public string str;
-        }
-
-        public struct MV_XML_FEATURE_Enumeration
-        {
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-
-            public Int32 nSymbolicNum;                           // Symbolic数
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_SYMBOLIC_STRLEN_C)]
-            public string strCurrentSymbolic;                                   // 当前Symbolic索引
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = MV_MAX_XML_SYMBOLIC_NUM)]
-            public StrSymbolic[] strSymbolic;
-            public MV_XML_AccessMode enAccessMode;                           // 访问模式
-            public Int32 bIsLocked;                              // 是否锁定。0-否；1-是
-            public Int64 nValue;                                 // 当前值
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-
-        public struct MV_XML_FEATURE_Port
-        {
-            public MV_XML_Visibility enVisivility;                              // 是否可见
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strDescription;                                       // 节点描述
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strDisplayName;                                       // 显示名称
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_NODE_STRLEN_C)]
-            public string strName;                                              // 节点名
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MV_MAX_XML_DISC_STRLEN_C)]
-            public string strToolTip;                                           // 提示
-            public MV_XML_AccessMode enAccessMode;                              // 访问模式
-            public Int32 bIsLocked;                                             // 是否锁定。0-否；1-是
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public UInt32[] nReserved;                                          // 保留字节
-        }
-        #endregion
-
-        public enum MvGvspPixelType
-        {
-            // Undefined pixel type
-            PixelType_Gvsp_Undefined = -1,
-
-            // Mono buffer format defines
-            PixelType_Gvsp_Mono1p = 0x01010037,
-            PixelType_Gvsp_Mono2p = 0x01020038,
-            PixelType_Gvsp_Mono4p = 0x01040039,
-            PixelType_Gvsp_Mono8 = 0x01080001,
-            PixelType_Gvsp_Mono8_Signed = 0x01080002,
-            PixelType_Gvsp_Mono10 = 0x01100003,
-            PixelType_Gvsp_Mono10_Packed = 0x010c0004,
-            PixelType_Gvsp_Mono12 = 0x01100005,
-            PixelType_Gvsp_Mono12_Packed = 0x010c0006,
-            PixelType_Gvsp_Mono14 = 0x01100025,
-            PixelType_Gvsp_Mono16 = 0x01100007,
-
-            // Bayer buffer format defines 
-            PixelType_Gvsp_BayerGR8 = 0x01080008,
-            PixelType_Gvsp_BayerRG8 = 0x01080009,
-            PixelType_Gvsp_BayerGB8 = 0x0108000a,
-            PixelType_Gvsp_BayerBG8 = 0x0108000b,
-            PixelType_Gvsp_BayerGR10 = 0x0110000c,
-            PixelType_Gvsp_BayerRG10 = 0x0110000d,
-            PixelType_Gvsp_BayerGB10 = 0x0110000e,
-            PixelType_Gvsp_BayerBG10 = 0x0110000f,
-            PixelType_Gvsp_BayerGR12 = 0x01100010,
-            PixelType_Gvsp_BayerRG12 = 0x01100011,
-            PixelType_Gvsp_BayerGB12 = 0x01100012,
-            PixelType_Gvsp_BayerBG12 = 0x01100013,
-            PixelType_Gvsp_BayerGR10_Packed = 0x010c0026,
-            PixelType_Gvsp_BayerRG10_Packed = 0x010c0027,
-            PixelType_Gvsp_BayerGB10_Packed = 0x010c0028,
-            PixelType_Gvsp_BayerBG10_Packed = 0x010c0029,
-            PixelType_Gvsp_BayerGR12_Packed = 0x010c002a,
-            PixelType_Gvsp_BayerRG12_Packed = 0x010c002b,
-            PixelType_Gvsp_BayerGB12_Packed = 0x010c002c,
-            PixelType_Gvsp_BayerBG12_Packed = 0x010c002d,
-            PixelType_Gvsp_BayerGR16 = 0x0110002e,
-            PixelType_Gvsp_BayerRG16 = 0x0110002f,
-            PixelType_Gvsp_BayerGB16 = 0x01100030,
-            PixelType_Gvsp_BayerBG16 = 0x01100031,
-
-            // RGB Packed buffer format defines 
-            PixelType_Gvsp_RGB8_Packed = 0x02180014,
-            PixelType_Gvsp_BGR8_Packed = 0x02180015,
-            PixelType_Gvsp_RGBA8_Packed = 0x02200016,
-            PixelType_Gvsp_BGRA8_Packed = 0x02200017,
-            PixelType_Gvsp_RGB10_Packed = 0x02300018,
-            PixelType_Gvsp_BGR10_Packed = 0x02300019,
-            PixelType_Gvsp_RGB12_Packed = 0x0230001a,
-            PixelType_Gvsp_BGR12_Packed = 0x0230001b,
-            PixelType_Gvsp_RGB16_Packed = 0x02300033,
-            PixelType_Gvsp_RGB10V1_Packed = 0x0220001c,
-            PixelType_Gvsp_RGB10V2_Packed = 0x0220001d,
-            PixelType_Gvsp_RGB12V1_Packed = 0x02240034,
-            PixelType_Gvsp_RGB565_Packed = 0x02100035,
-            PixelType_Gvsp_BGR565_Packed = 0x02100036,
-
-            // YUV Packed buffer format defines 
-            PixelType_Gvsp_YUV411_Packed = 0x020c001e,
-            PixelType_Gvsp_YUV422_Packed = 0x0210001f,
-            PixelType_Gvsp_YUV422_YUYV_Packed = 0x02100032,
-            PixelType_Gvsp_YUV444_Packed = 0x02180020,
-            PixelType_Gvsp_YCBCR8_CBYCR = 0x0218003a,
-            PixelType_Gvsp_YCBCR422_8 = 0x0210003b,
-            PixelType_Gvsp_YCBCR422_8_CBYCRY = 0x02100043,
-            PixelType_Gvsp_YCBCR411_8_CBYYCRYY = 0x020c003c,
-            PixelType_Gvsp_YCBCR601_8_CBYCR = 0x0218003d,
-            PixelType_Gvsp_YCBCR601_422_8 = 0x0210003e,
-            PixelType_Gvsp_YCBCR601_422_8_CBYCRY = 0x02100044,
-            PixelType_Gvsp_YCBCR601_411_8_CBYYCRYY = 0x020c003f,
-            PixelType_Gvsp_YCBCR709_8_CBYCR = 0x02180040,
-            PixelType_Gvsp_YCBCR709_422_8 = 0x02100041,
-            PixelType_Gvsp_YCBCR709_422_8_CBYCRY = 0x02100045,
-            PixelType_Gvsp_YCBCR709_411_8_CBYYCRYY = 0x020c0042,
-
-            // RGB Planar buffer format defines 
-            PixelType_Gvsp_RGB8_Planar = 0x02180021,
-            PixelType_Gvsp_RGB10_Planar = 0x02300022,
-            PixelType_Gvsp_RGB12_Planar = 0x02300023,
-            PixelType_Gvsp_RGB16_Planar = 0x02300024,
-
-            // 自定义的图片格式
-            PixelType_Gvsp_Jpeg = unchecked((Int32)0x80180001),
-
-            PixelType_Gvsp_Coord3D_ABC32f = 0x026000C0,
-            PixelType_Gvsp_Coord3D_ABC32f_Planar = 0x026000C1,
-
-
-            PixelType_Gvsp_Coord3D_AC32f = 0x024000C2,//3D coordinate A-C 32-bit floating point
-            PixelType_Gvsp_COORD3D_DEPTH_PLUS_MASK = unchecked((Int32)0x821c0001),
-
-            PixelType_Gvsp_Coord3D_ABC32 = unchecked((Int32)0x82603001),
-
-            PixelType_Gvsp_Coord3D_AB32f = unchecked((Int32)0x82403002),
-            PixelType_Gvsp_Coord3D_AB32 = unchecked((Int32)0x82403003),
-
-            PixelType_Gvsp_Coord3D_AC32f_Planar = 0x024000C3,
-            PixelType_Gvsp_Coord3D_AC32 = unchecked((Int32)0x82403004),
-
-            PixelType_Gvsp_Coord3D_A32f = 0x012000BD,
-            PixelType_Gvsp_Coord3D_A32 = unchecked((Int32)0x81203005),
-
-            PixelType_Gvsp_Coord3D_C32f = 0x012000BF,
-            PixelType_Gvsp_Coord3D_C32 = unchecked((Int32)0x81203006),
-
-            PixelType_Gvsp_Coord3D_ABC16 = 0x023000b9,
-            PixelType_Gvsp_Coord3D_C16 = 0x011000b8,
-
-            //无损压缩像素格式定义
-            PixelType_Gvsp_HB_Mono8 = unchecked((Int32)0x81080001),
-            PixelType_Gvsp_HB_Mono10 = unchecked((Int32)0x81100003),
-            PixelType_Gvsp_HB_Mono10_Packed = unchecked((Int32)0x810c0004),
-            PixelType_Gvsp_HB_Mono12 = unchecked((Int32)0x81100005),
-            PixelType_Gvsp_HB_Mono12_Packed = unchecked((Int32)0x810c0006),
-            PixelType_Gvsp_HB_Mono16 = unchecked((Int32)0x81100007),
-            PixelType_Gvsp_HB_BayerGR8 = unchecked((Int32)0x81080008),
-            PixelType_Gvsp_HB_BayerRG8 = unchecked((Int32)0x81080009),
-            PixelType_Gvsp_HB_BayerGB8 = unchecked((Int32)0x8108000a),
-            PixelType_Gvsp_HB_BayerBG8 = unchecked((Int32)0x8108000b),
-            PixelType_Gvsp_HB_BayerGR10 = unchecked((Int32)0x8110000c),
-            PixelType_Gvsp_HB_BayerRG10 = unchecked((Int32)0x8110000d),
-            PixelType_Gvsp_HB_BayerGB10 = unchecked((Int32)0x8110000e),
-            PixelType_Gvsp_HB_BayerBG10 = unchecked((Int32)0x8110000f),
-            PixelType_Gvsp_HB_BayerGR12 = unchecked((Int32)0x81100010),
-            PixelType_Gvsp_HB_BayerRG12 = unchecked((Int32)0x81100011),
-            PixelType_Gvsp_HB_BayerGB12 = unchecked((Int32)0x81100012),
-            PixelType_Gvsp_HB_BayerBG12 = unchecked((Int32)0x81100013),
-            PixelType_Gvsp_HB_BayerGR10_Packed = unchecked((Int32)0x810c0026),
-            PixelType_Gvsp_HB_BayerRG10_Packed = unchecked((Int32)0x810c0027),
-            PixelType_Gvsp_HB_BayerGB10_Packed = unchecked((Int32)0x810c0028),
-            PixelType_Gvsp_HB_BayerBG10_Packed = unchecked((Int32)0x810c0029),
-            PixelType_Gvsp_HB_BayerGR12_Packed = unchecked((Int32)0x810c002a),
-            PixelType_Gvsp_HB_BayerRG12_Packed = unchecked((Int32)0x810c002b),
-            PixelType_Gvsp_HB_BayerGB12_Packed = unchecked((Int32)0x810c002c),
-            PixelType_Gvsp_HB_BayerBG12_Packed = unchecked((Int32)0x810c002d),
-            PixelType_Gvsp_HB_YUV422_Packed = unchecked((Int32)0x8210001f),
-            PixelType_Gvsp_HB_YUV422_YUYV_Packed = unchecked((Int32)0x82100032),
-            PixelType_Gvsp_HB_RGB8_Packed = unchecked((Int32)0x82180014),
-            PixelType_Gvsp_HB_BGR8_Packed = unchecked((Int32)0x82180015),
-            PixelType_Gvsp_HB_RGBA8_Packed = unchecked((Int32)0x82200016),
-            PixelType_Gvsp_HB_BGRA8_Packed = unchecked((Int32)0x82200017),
-        };
-
-        // 私有成员变量
-        IntPtr handle;                                                          // 设备句柄
-
-        #region 从C/C++接口库导出的函数
-        /************************************************************************/
-        /* 相机的基本指令和操作                                         */
-        /************************************************************************/
+        #region 相机的基本指令和操作函数
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetSDKVersion")]
         private static extern UInt32 MV_CC_GetSDKVersion();
 
@@ -4213,8 +8631,11 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumDevicesEx")]
         private static extern Int32 MV_CC_EnumDevicesEx(UInt32 nTLayerType, ref MV_CC_DEVICE_INFO_LIST stDevList, String pManufacturerName);
 
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumDevicesEx2")]
+        private static extern Int32 MV_CC_EnumDevicesEx2(UInt32 nTLayerType, ref MV_CC_DEVICE_INFO_LIST stDevList, String pManufacturerName, MV_SORT_METHOD enSortMethod);
+
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_IsDeviceAccessible")]
-        private static extern Boolean MV_CC_IsDeviceAccessible(ref MV_CC_DEVICE_INFO stDevInfo, UInt32 nAccessMode);
+        private static extern Byte MV_CC_IsDeviceAccessible(ref MV_CC_DEVICE_INFO stDevInfo, UInt32 nAccessMode);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetSDKLogPath")]
         private static extern Int32 MV_CC_SetSDKLogPath(String pSDKLogPath);
@@ -4235,7 +8656,7 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         private static extern Int32 MV_CC_CloseDevice(IntPtr handle);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_IsDeviceConnected")]
-        private static extern Boolean MV_CC_IsDeviceConnected(IntPtr handle);
+        private static extern Byte MV_CC_IsDeviceConnected(IntPtr handle);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterImageCallBackEx")]
         private static extern Int32 MV_CC_RegisterImageCallBackEx(IntPtr handle, cbOutputExdelegate cbOutput, IntPtr pUser);
@@ -4270,11 +8691,14 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ClearImageBuffer")]
         private static extern Int32 MV_CC_ClearImageBuffer(IntPtr handle);
 
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_Display")]
-        private static extern Int32 MV_CC_Display(IntPtr handle, IntPtr hWnd);
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetValidImageNum")]
+        private static extern Int32 MV_CC_GetValidImageNum(IntPtr handle, ref UInt32 pnValidImageNum);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DisplayOneFrame")]
         private static extern Int32 MV_CC_DisplayOneFrame(IntPtr handle, ref MV_DISPLAY_FRAME_INFO pDisplayInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DisplayOneFrameEx")]
+        private static extern Int32 MV_CC_DisplayOneFrameEx(IntPtr handle, IntPtr hWnd, ref MV_DISPLAY_FRAME_INFO_EX pDisplayInfoEx);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetImageNodeNum")]
         private static extern Int32 MV_CC_SetImageNodeNum(IntPtr handle, UInt32 nNum);
@@ -4285,27 +8709,19 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetOutputQueueSize")]
         private static extern Int32 MV_CC_SetOutputQueueSize(IntPtr handle, UInt32 nOutputQueueSize);
 
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetImageInfo")]
-        private static extern Int32 MV_CC_GetImageInfo(IntPtr handle, ref MV_IMAGE_BASIC_INFO pstInfo);
-
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetDeviceInfo")]
         private static extern Int32 MV_CC_GetDeviceInfo(IntPtr handle, ref MV_CC_DEVICE_INFO pstDevInfo);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetAllMatchInfo")]
         private static extern Int32 MV_CC_GetAllMatchInfo(IntPtr handle, ref MV_ALL_MATCH_INFO pstInfo);
+        #endregion
 
-
+        #region 设置和获取相机参数的万能接口
         /************************************************************************/
         /* 设置和获取相机参数的万能接口                                 */
         /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetIntValue")]
-        private static extern Int32 MV_CC_GetIntValue(IntPtr handle, String strValue, ref MVCC_INTVALUE pIntValue);
-
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetIntValueEx")]
         private static extern Int32 MV_CC_GetIntValueEx(IntPtr handle, String strValue, ref MVCC_INTVALUE_EX pIntValue);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetIntValue")]
-        private static extern Int32 MV_CC_SetIntValue(IntPtr handle, String strValue, UInt32 nValue);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetIntValueEx")]
         private static extern Int32 MV_CC_SetIntValueEx(IntPtr handle, String strValue, Int64 nValue);
@@ -4315,6 +8731,9 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetEnumValue")]
         private static extern Int32 MV_CC_SetEnumValue(IntPtr handle, String strValue, UInt32 nValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetEnumEntrySymbolic")]
+        private static extern Int32 MV_CC_GetEnumEntrySymbolic(IntPtr handle, string strKey, ref MVCC_ENUMENTRY pstEnumEntry);
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetEnumValueByString")]
         private static extern Int32 MV_CC_SetEnumValueByString(IntPtr handle, String strValue, String sValue);
@@ -4342,10 +8761,389 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
 
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_InvalidateNodes")]
         private static extern Int32 MV_CC_InvalidateNodes(IntPtr handle);
+        #endregion
 
+        #region 设备升级 和 寄存器读写 和异常、事件回调
+        /************************************************************************/
+        /* 设备升级 和 寄存器读写 和异常、事件回调                            */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LocalUpgrade")]
+        private static extern Int32 MV_CC_LocalUpgrade(IntPtr handle, String pFilePathName);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetUpgradeProcess")]
+        private static extern Int32 MV_CC_GetUpgradeProcess(IntPtr handle, ref UInt32 pnProcess);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ReadMemory")]
+        private static extern Int32 MV_CC_ReadMemory(IntPtr handle, IntPtr pBuffer, Int64 nAddress, Int64 nLength);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_WriteMemory")]
+        private static extern Int32 MV_CC_WriteMemory(IntPtr handle, IntPtr pBuffer, Int64 nAddress, Int64 nLength);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterExceptionCallBack")]
+        private static extern Int32 MV_CC_RegisterExceptionCallBack(IntPtr handle, cbExceptiondelegate cbException, IntPtr pUser);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterEventCallBack")]
+        private static extern Int32 MV_CC_RegisterEventCallBack(IntPtr handle, cbEventdelegate cbEvent, IntPtr pUser);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterAllEventCallBack")]
+        private static extern Int32 MV_CC_RegisterAllEventCallBack(IntPtr handle, cbEventdelegateEx cbEvent, IntPtr pUser);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterEventCallBackEx")]
+        private static extern Int32 MV_CC_RegisterEventCallBackEx(IntPtr handle, String pEventName, cbEventdelegateEx cbEvent, IntPtr pUser);
+        #endregion
+
+        #region GigEVision 设备独有的接口
+        /************************************************************************/
+        /* GigEVision 设备独有的接口                                     */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetEnumDevTimeout")]
+        private static extern Int32 MV_GIGE_SetEnumDevTimeout(UInt32 nMilTimeout);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_ForceIpEx")]
+        private static extern Int32 MV_GIGE_ForceIpEx(IntPtr handle, UInt32 nIP, UInt32 nSubNetMask, UInt32 nDefaultGateWay);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetIpConfig")]
+        private static extern Int32 MV_GIGE_SetIpConfig(IntPtr handle, UInt32 nType);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetNetTransMode")]
+        private static extern Int32 MV_GIGE_SetNetTransMode(IntPtr handle, UInt32 nType);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetNetTransInfo")]
+        private static extern Int32 MV_GIGE_GetNetTransInfo(IntPtr handle, ref MV_NETTRANS_INFO pstInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetDiscoveryMode")]
+        private static extern Int32 MV_GIGE_SetDiscoveryMode(UInt32 nMode);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGvspTimeout")]
+        private static extern Int32 MV_GIGE_SetGvspTimeout(IntPtr handle, UInt32 nMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGvspTimeout")]
+        private static extern Int32 MV_GIGE_GetGvspTimeout(IntPtr handle, ref UInt32 pMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGvcpTimeout")]
+        private static extern Int32 MV_GIGE_SetGvcpTimeout(IntPtr handle, UInt32 nMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGvcpTimeout")]
+        private static extern Int32 MV_GIGE_GetGvcpTimeout(IntPtr handle, ref UInt32 pMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetRetryGvcpTimes")]
+        private static extern Int32 MV_GIGE_SetRetryGvcpTimes(IntPtr handle, UInt32 nRetryGvcpTimes);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetRetryGvcpTimes")]
+        private static extern Int32 MV_GIGE_GetRetryGvcpTimes(IntPtr handle, ref UInt32 pRetryGvcpTimes);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOptimalPacketSize")]
+        private static extern Int32 MV_CC_GetOptimalPacketSize(IntPtr handle);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResend")]
+        private static extern Int32 MV_GIGE_SetResend(IntPtr handle, UInt32 bEnable, UInt32 nMaxResendPercent, UInt32 nResendTimeout);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResendMaxRetryTimes")]
+        private static extern Int32 MV_GIGE_SetResendMaxRetryTimes(IntPtr handle, UInt32 nRetryTimes);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetResendMaxRetryTimes")]
+        private static extern Int32 MV_GIGE_GetResendMaxRetryTimes(IntPtr handle, ref UInt32 pnRetryTimes);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResendTimeInterval")]
+        private static extern Int32 MV_GIGE_SetResendTimeInterval(IntPtr handle, UInt32 nMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetResendTimeInterval")]
+        private static extern Int32 MV_GIGE_GetResendTimeInterval(IntPtr handle, ref UInt32 pnMillisec);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetTransmissionType")]
+        private static extern Int32 MV_GIGE_SetTransmissionType(IntPtr handle, ref MV_CC_TRANSMISSION_TYPE pstTransmissionType);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_IssueActionCommand")]
+        private static extern Int32 MV_GIGE_IssueActionCommand(ref MV_ACTION_CMD_INFO pstActionCmdInfo, ref MV_ACTION_CMD_RESULT_LIST pstActionCmdResults);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetMulticastStatus")]
+        private static extern Int32 MV_GIGE_GetMulticastStatus(ref MV_CC_DEVICE_INFO pstDevInfo, ref Boolean pStatus);
+        #endregion
+
+        #region CameraLink独有的接口
+        //CameraLink独有的接口
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_SetDeviceBauderate")]
+        private static extern Int32 MV_CAML_SetDeviceBaudrate(IntPtr handle, UInt32 nBaudrate);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_GetDeviceBauderate")]
+        private static extern Int32 MV_CAML_GetDeviceBaudrate(IntPtr handle, ref UInt32 pnCurrentBaudrate);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_GetSupportBauderates")]
+        private static extern Int32 MV_CAML_GetSupportBaudrates(IntPtr handle, ref UInt32 pnBaudrateAblity);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_SetGenCPTimeOut")]
+        private static extern Int32 MV_CAML_SetGenCPTimeOut(IntPtr handle, UInt32 nMillisec);
+        #endregion
+
+        #region U3V 设备独有的接口
+        /************************************************************************/
+        /* U3V 设备独有的接口                                            */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetTransferSize")]
+        private static extern Int32 MV_USB_SetTransferSize(IntPtr handle, UInt32 nTransferSize);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_GetTransferSize")]
+        private static extern Int32 MV_USB_GetTransferSize(IntPtr handle, ref UInt32 pTransferSize);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetTransferWays")]
+        private static extern Int32 MV_USB_SetTransferWays(IntPtr handle, UInt32 nTransferWays);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_GetTransferWays")]
+        private static extern Int32 MV_USB_GetTransferWays(IntPtr handle, ref UInt32 pTransferWays);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_RegisterStreamExceptionCallBack")]
+        private static extern Int32 MV_USB_RegisterStreamExceptionCallBack(IntPtr handle, cbStreamException cbException, IntPtr pUser);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetEventNodeNum")]
+        private static extern Int32 MV_USB_SetEventNodeNum(IntPtr handle, UInt32 nEventNodeNum);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetSyncTimeOut")]
+        private static extern Int32 MV_USB_SetSyncTimeOut(IntPtr handle, UInt32 nMills);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_GetSyncTimeOut")]
+        private static extern Int32 MV_USB_GetSyncTimeOut(IntPtr handle, ref UInt32 pnMills);
+        #endregion
+
+        #region GenTL相关接口，其它接口可以复用（部分接口不支持）
+        /************************************************************************/
+        /* GenTL相关接口，其它接口可以复用（部分接口不支持）                    */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumInterfacesByGenTL")]
+        private static extern Int32 MV_CC_EnumInterfacesByGenTL(ref MV_GENTL_IF_INFO_LIST pstIFInfoList, String sGenTLPath);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumDevicesByGenTL")]
+        private static extern Int32 MV_CC_EnumDevicesByGenTL(ref MV_GENTL_IF_INFO stIFInfo, ref MV_GENTL_DEV_INFO_LIST pstDevList);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_UnloadGenTLLibrary")]
+        private static extern Int32 MV_CC_UnloadGenTLLibrary(String strGenTLPath);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_CreateHandleByGenTL")]
+        private static extern Int32 MV_CC_CreateHandleByGenTL(ref IntPtr handle, ref MV_GENTL_DEV_INFO stDevInfo);
+        #endregion
+
+        #region XML解析树的生成
+        /************************************************************************/
+        /* XML解析树的生成                                                         */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetGenICamXML")]
+        private static extern Int32 MV_XML_GetGenICamXML(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref UInt32 pnDataLen);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeAccessMode")]
+        private static extern Int32 MV_XML_GetNodeAccessMode(IntPtr handle, String pstrName, ref MV_XML_AccessMode pAccessMode);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeInterfaceType")]
+        private static extern Int32 MV_XML_GetNodeInterfaceType(IntPtr handle, String pstrName, ref MV_XML_InterfaceType pInterfaceType);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetRootNode")]
+        private static extern Int32 MV_XML_GetRootNode(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetChildren")]
+        private static extern Int32 MV_XML_GetChildren(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, IntPtr pstNodesList);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetChildren")]
+        private static extern Int32 MV_XML_GetChildren(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, ref MV_XML_NODES_LIST pstNodesList);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeFeature")]
+        private static extern Int32 MV_XML_GetNodeFeature(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, IntPtr pstFeature);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_UpdateNodeFeature")]
+        private static extern Int32 MV_XML_UpdateNodeFeature(IntPtr handle, MV_XML_InterfaceType enType, IntPtr pstFeature);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_RegisterUpdateCallBack")]
+        private static extern Int32 MV_XML_RegisterUpdateCallBack(IntPtr handle, cbXmlUpdatedelegate cbXmlUpdate, IntPtr pUser);
+        #endregion
+
+        #region 附加接口
+        /************************************************************************/
+        /* 附加接口                                   */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageEx3")]
+        private static extern Int32 MV_CC_SaveImageEx3(IntPtr handle, ref MV_SAVE_IMAGE_PARAM_EX3 stSaveParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageToFileEx")]
+        private static extern Int32 MV_CC_SaveImageToFileEx(IntPtr handle, ref MV_SAVE_IMG_TO_FILE_PARAM_EX pstSaveFileParamEx);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SavePointCloudData")]
+        private static extern Int32 MV_CC_SavePointCloudData(IntPtr handle, ref MV_SAVE_POINT_CLOUD_PARAM pstPointDataParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RotateImage")]
+        private static extern Int32 MV_CC_RotateImage(IntPtr handle, ref MV_CC_ROTATE_IMAGE_PARAM pstRotateParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FlipImage")]
+        private static extern Int32 MV_CC_FlipImage(IntPtr handle, ref MV_CC_FLIP_IMAGE_PARAM pstFlipParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ConvertPixelTypeEx")]
+        private static extern Int32 MV_CC_ConvertPixelTypeEx(IntPtr handle, ref MV_CC_PIXEL_CONVERT_PARAM_EX pstCvtParamEx);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetGammaValue")]
+        private static extern Int32 MV_CC_SetGammaValue(IntPtr handle, MvGvspPixelType enSrcPixelType, Single fGammaValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCvtQuality")]
+        private static extern Int32 MV_CC_SetBayerCvtQuality(IntPtr handle, UInt32 BayerCvtQuality);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerFilterEnable")]
+        private static extern Int32 MV_CC_SetBayerFilterEnable(IntPtr handle, Boolean bFilterEnable);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerGammaParam")]
+        private static extern Int32 MV_CC_SetBayerGammaParam(IntPtr handle, ref MV_CC_GAMMA_PARAM pstGammaParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCCMParam")]
+        private static extern Int32 MV_CC_SetBayerCCMParam(IntPtr handle, ref MV_CC_CCM_PARAM pstCCMParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCCMParamEx")]
+        private static extern Int32 MV_CC_SetBayerCCMParamEx(IntPtr handle, ref MV_CC_CCM_PARAM_EX pstCCMParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ImageContrast")]
+        private static extern Int32 MV_CC_ImageContrast(IntPtr handle, ref MV_CC_CONTRAST_PARAM pstContrastParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_HB_Decode")]
+        private static extern Int32 MV_CC_HB_Decode(IntPtr handle, ref MV_CC_HB_DECODE_PARAM pstDecodeParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DrawRect")]
+        private static extern Int32 MV_CC_DrawRect(IntPtr handle, ref MVCC_RECT_INFO pRectInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DrawCircle")]
+        private static extern Int32 MV_CC_DrawCircle(IntPtr handle, ref MVCC_CIRCLE_INFO pCircleInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_DrawLines")]
+        private static extern Int32 MV_CC_DrawLines(IntPtr handle, ref MVCC_LINES_INFO pLinesInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FeatureSave")]
+        private static extern Int32 MV_CC_FeatureSave(IntPtr handle, String pFileName);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FeatureLoad")]
+        private static extern Int32 MV_CC_FeatureLoad(IntPtr handle, String pFileName);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessRead")]
+        private static extern Int32 MV_CC_FileAccessRead(IntPtr handle, ref MV_CC_FILE_ACCESS pstFileAccess);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessReadEx")]
+        private static extern Int32 MV_CC_FileAccessReadEx(IntPtr handle, ref MV_CC_FILE_ACCESS_EX pstFileAccessEx);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessWrite")]
+        private static extern Int32 MV_CC_FileAccessWrite(IntPtr handle, ref MV_CC_FILE_ACCESS pstFileAccess);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessWriteEx")]
+        private static extern Int32 MV_CC_FileAccessWriteEx(IntPtr handle, ref MV_CC_FILE_ACCESS_EX pstFileAccessEx);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetFileAccessProgress")]
+        private static extern Int32 MV_CC_GetFileAccessProgress(IntPtr handle, ref MV_CC_FILE_ACCESS_PROGRESS pstFileAccessProgress);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StartRecord")]
+        private static extern Int32 MV_CC_StartRecord(IntPtr handle, ref MV_CC_RECORD_PARAM pstRecordParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_InputOneFrame")]
+        private static extern Int32 MV_CC_InputOneFrame(IntPtr handle, ref MV_CC_INPUT_FRAME_INFO pstInputFrameInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StopRecord")]
+        private static extern Int32 MV_CC_StopRecord(IntPtr handle);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_OpenParamsGUI")]
+        private static extern Int32 MV_CC_OpenParamsGUI(IntPtr handle);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ReconstructImage")]
+        private static extern Int32 MV_CC_ReconstructImage(IntPtr handle, ref MV_RECONSTRUCT_IMAGE_PARAM pstReconstructParam);
+        #endregion
+
+        #region 弃用的接口
+        /************************************************************************/
+        /* 弃用的接口                                 */
+        /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageEx2")]
+        private static extern Int32 MV_CC_SaveImageEx2(IntPtr handle, ref MV_SAVE_IMAGE_PARAM_EX2 stSaveParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageToFile")]
+        private static extern Int32 MV_CC_SaveImageToFile(IntPtr handle, ref MV_SAVE_IMG_TO_FILE_PARAM pstSaveFileParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ConvertPixelType")]
+        private static extern Int32 MV_CC_ConvertPixelType(IntPtr handle, ref MV_PIXEL_CONVERT_PARAM pstCvtParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOneFrame")]
+        private static extern Int32 MV_CC_GetOneFrame(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref MV_FRAME_OUT_INFO pFrameInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOneFrameEx")]
+        private static extern Int32 MV_CC_GetOneFrameEx(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref MV_FRAME_OUT_INFO_EX pFrameInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterImageCallBack")]
+        private static extern Int32 MV_CC_RegisterImageCallBack(IntPtr handle, cbOutputdelegate cbOutput, IntPtr pUser);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImage")]
+        private static extern Int32 MV_CC_SaveImage(ref MV_SAVE_IMAGE_PARAM stSaveParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_ForceIp")]
+        private static extern Int32 MV_GIGE_ForceIp(IntPtr handle, UInt32 nIP);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_BayerNoiseEstimate")]
+        private static extern Int32 MV_CC_BayerNoiseEstimate(IntPtr handle, ref MV_CC_BAYER_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_BayerSpatialDenoise")]
+        private static extern Int32 MV_CC_BayerSpatialDenoise(IntPtr handle, ref MV_CC_BAYER_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_Display")]
+        private static extern Int32 MV_CC_Display(IntPtr handle, IntPtr hWnd);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetImageInfo")]
+        private static extern Int32 MV_CC_GetImageInfo(IntPtr handle, ref MV_IMAGE_BASIC_INFO pstInfo);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCPSPacketSize")]
+        private static extern Int32 MV_GIGE_GetGevSCPSPacketSize(IntPtr handle, ref MVCC_INTVALUE pstValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCPSPacketSize")]
+        private static extern Int32 MV_GIGE_SetGevSCPSPacketSize(IntPtr handle, UInt32 nValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCPD")]
+        private static extern Int32 MV_GIGE_GetGevSCPD(IntPtr handle, ref MVCC_INTVALUE pstValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCPD")]
+        private static extern Int32 MV_GIGE_SetGevSCPD(IntPtr handle, UInt32 nValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCDA")]
+        private static extern Int32 MV_GIGE_GetGevSCDA(IntPtr handle, ref UInt32 pnIP);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCDA")]
+        private static extern Int32 MV_GIGE_SetGevSCDA(IntPtr handle, UInt32 nIP);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCSP")]
+        private static extern Int32 MV_GIGE_GetGevSCSP(IntPtr handle, ref UInt32 pnPort);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCSP")]
+        private static extern Int32 MV_GIGE_SetGevSCSP(IntPtr handle, UInt32 nPort);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCLUTParam")]
+        private static extern Int32 MV_CC_SetBayerCLUTParam(IntPtr handle, ref MV_CC_CLUT_PARAM pstCLUTParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ImageSharpen")]
+        private static extern Int32 MV_CC_ImageSharpen(IntPtr handle, ref MV_CC_SHARPEN_PARAM pstSharpenParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ColorCorrect")]
+        private static extern Int32 MV_CC_ColorCorrect(IntPtr handle, ref MV_CC_COLOR_CORRECT_PARAM pstColorCorrectParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_NoiseEstimate")]
+        private static extern Int32 MV_CC_NoiseEstimate(IntPtr handle, ref MV_CC_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SpatialDenoise")]
+        private static extern Int32 MV_CC_SpatialDenoise(IntPtr handle, ref MV_CC_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LSCCalib")]
+        private static extern Int32 MV_CC_LSCCalib(IntPtr handle, ref MV_CC_LSC_CALIB_PARAM pstLSCCalibParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LSCCorrect")]
+        private static extern Int32 MV_CC_LSCCorrect(IntPtr handle, ref MV_CC_LSC_CORRECT_PARAM pstLSCCorrectParam);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetTlProxy")]
+        private static extern IntPtr MV_CC_GetTlProxy(IntPtr handle);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_WriteLog")]
+        private static extern Int32 MV_CC_WriteLog(string strLog);
         /************************************************************************/
         /* 相机参数获取和设置，此模块的所有接口，将逐步废弃，建议用上面的万能接口代替   */
         /************************************************************************/
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetIntValue")]
+        private static extern Int32 MV_CC_GetIntValue(IntPtr handle, String strValue, ref MVCC_INTVALUE pIntValue);
+
+        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetIntValue")]
+        private static extern Int32 MV_CC_SetIntValue(IntPtr handle, String strValue, UInt32 nValue);
+
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetWidth")]
         private static extern Int32 MV_CC_GetWidth(IntPtr handle, ref MVCC_INTVALUE pstValue);
 
@@ -4529,311 +9327,10 @@ namespace MG.CamCtrl.Cameralibs.HKCamera
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetHeartBeatTimeout")]
         private static extern Int32 MV_CC_SetHeartBeatTimeout(IntPtr handle, UInt32 nValue);
 
-        /************************************************************************/
-        /* 设备升级 和 寄存器读写 和异常、事件回调                            */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LocalUpgrade")]
-        private static extern Int32 MV_CC_LocalUpgrade(IntPtr handle, String pFilePathName);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetUpgradeProcess")]
-        private static extern Int32 MV_CC_GetUpgradeProcess(IntPtr handle, ref UInt32 pnProcess);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOptimalPacketSize")]
-        private static extern Int32 MV_CC_GetOptimalPacketSize(IntPtr handle);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ReadMemory")]
-        private static extern Int32 MV_CC_ReadMemory(IntPtr handle, IntPtr pBuffer, Int64 nAddress, Int64 nLength);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_WriteMemory")]
-        private static extern Int32 MV_CC_WriteMemory(IntPtr handle, IntPtr pBuffer, Int64 nAddress, Int64 nLength);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterExceptionCallBack")]
-        private static extern Int32 MV_CC_RegisterExceptionCallBack(IntPtr handle, cbExceptiondelegate cbException, IntPtr pUser);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterEventCallBack")]
-        private static extern Int32 MV_CC_RegisterEventCallBack(IntPtr handle, cbEventdelegate cbEvent, IntPtr pUser);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterAllEventCallBack")]
-        private static extern Int32 MV_CC_RegisterAllEventCallBack(IntPtr handle, cbEventdelegateEx cbEvent, IntPtr pUser);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterEventCallBackEx")]
-        private static extern Int32 MV_CC_RegisterEventCallBackEx(IntPtr handle, String pEventName, cbEventdelegateEx cbEvent, IntPtr pUser);
-
-        /************************************************************************/
-        /* GigEVision 设备独有的接口                                     */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_ForceIpEx")]
-        private static extern Int32 MV_GIGE_ForceIpEx(IntPtr handle, UInt32 nIP, UInt32 nSubNetMask, UInt32 nDefaultGateWay);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetIpConfig")]
-        private static extern Int32 MV_GIGE_SetIpConfig(IntPtr handle, UInt32 nType);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetNetTransMode")]
-        private static extern Int32 MV_GIGE_SetNetTransMode(IntPtr handle, UInt32 nType);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetNetTransInfo")]
-        private static extern Int32 MV_GIGE_GetNetTransInfo(IntPtr handle, ref MV_NETTRANS_INFO pstInfo);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetDiscoveryMode")]
-        private static extern Int32 MV_GIGE_SetDiscoveryMode(UInt32 nMode);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGvspTimeout")]
-        private static extern Int32 MV_GIGE_SetGvspTimeout(IntPtr handle, UInt32 nMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGvspTimeout")]
-        private static extern Int32 MV_GIGE_GetGvspTimeout(IntPtr handle, ref UInt32 pMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGvcpTimeout")]
-        private static extern Int32 MV_GIGE_SetGvcpTimeout(IntPtr handle, UInt32 nMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGvcpTimeout")]
-        private static extern Int32 MV_GIGE_GetGvcpTimeout(IntPtr handle, ref UInt32 pMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetRetryGvcpTimes")]
-        private static extern Int32 MV_GIGE_SetRetryGvcpTimes(IntPtr handle, UInt32 nRetryGvcpTimes);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetRetryGvcpTimes")]
-        private static extern Int32 MV_GIGE_GetRetryGvcpTimes(IntPtr handle, ref UInt32 pRetryGvcpTimes);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResend")]
-        private static extern Int32 MV_GIGE_SetResend(IntPtr handle, UInt32 bEnable, UInt32 nMaxResendPercent, UInt32 nResendTimeout);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResendMaxRetryTimes")]
-        private static extern Int32 MV_GIGE_SetResendMaxRetryTimes(IntPtr handle, UInt32 nRetryTimes);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetResendMaxRetryTimes")]
-        private static extern Int32 MV_GIGE_GetResendMaxRetryTimes(IntPtr handle, ref UInt32 pnRetryTimes);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetResendTimeInterval")]
-        private static extern Int32 MV_GIGE_SetResendTimeInterval(IntPtr handle, UInt32 nMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetResendTimeInterval")]
-        private static extern Int32 MV_GIGE_GetResendTimeInterval(IntPtr handle, ref UInt32 pnMillisec);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCPSPacketSize")]
-        private static extern Int32 MV_GIGE_GetGevSCPSPacketSize(IntPtr handle, ref MVCC_INTVALUE pstValue);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCPSPacketSize")]
-        private static extern Int32 MV_GIGE_SetGevSCPSPacketSize(IntPtr handle, UInt32 nValue);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCPD")]
-        private static extern Int32 MV_GIGE_GetGevSCPD(IntPtr handle, ref MVCC_INTVALUE pstValue);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCPD")]
-        private static extern Int32 MV_GIGE_SetGevSCPD(IntPtr handle, UInt32 nValue);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCDA")]
-        private static extern Int32 MV_GIGE_GetGevSCDA(IntPtr handle, ref UInt32 pnIP);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCDA")]
-        private static extern Int32 MV_GIGE_SetGevSCDA(IntPtr handle, UInt32 nIP);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetGevSCSP")]
-        private static extern Int32 MV_GIGE_GetGevSCSP(IntPtr handle, ref UInt32 pnPort);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetGevSCSP")]
-        private static extern Int32 MV_GIGE_SetGevSCSP(IntPtr handle, UInt32 nPort);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_SetTransmissionType")]
-        private static extern Int32 MV_GIGE_SetTransmissionType(IntPtr handle, ref MV_CC_TRANSMISSION_TYPE pstTransmissionType);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_IssueActionCommand")]
-        private static extern Int32 MV_GIGE_IssueActionCommand(ref MV_ACTION_CMD_INFO pstActionCmdInfo, ref MV_ACTION_CMD_RESULT_LIST pstActionCmdResults);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_GetMulticastStatus")]
-        private static extern Int32 MV_GIGE_GetMulticastStatus(ref MV_CC_DEVICE_INFO pstDevInfo, ref Boolean pStatus);
-
-
-        //CameraLink独有的接口
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_SetDeviceBauderate")]
-        private static extern Int32 MV_CAML_SetDeviceBaudrate(IntPtr handle, UInt32 nBaudrate);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_GetDeviceBauderate")]
-        private static extern Int32 MV_CAML_GetDeviceBaudrate(IntPtr handle, ref UInt32 pnCurrentBaudrate);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_GetSupportBauderates")]
-        private static extern Int32 MV_CAML_GetSupportBaudrates(IntPtr handle, ref UInt32 pnBaudrateAblity);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CAML_SetGenCPTimeOut")]
-        private static extern Int32 MV_CAML_SetGenCPTimeOut(IntPtr handle, UInt32 nMillisec);
-
-        /************************************************************************/
-        /* U3V 设备独有的接口                                            */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetTransferSize")]
-        private static extern Int32 MV_USB_SetTransferSize(IntPtr handle, UInt32 nTransferSize);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_GetTransferSize")]
-        private static extern Int32 MV_USB_GetTransferSize(IntPtr handle, ref UInt32 pTransferSize);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_SetTransferWays")]
-        private static extern Int32 MV_USB_SetTransferWays(IntPtr handle, UInt32 nTransferWays);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_USB_GetTransferWays")]
-        private static extern Int32 MV_USB_GetTransferWays(IntPtr handle, ref UInt32 pTransferWays);
-
-
-        /************************************************************************/
-        /* GenTL相关接口，其它接口可以复用（部分接口不支持）                    */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumInterfacesByGenTL")]
-        private static extern Int32 MV_CC_EnumInterfacesByGenTL(ref MV_GENTL_IF_INFO_LIST pstIFInfoList, String sGenTLPath);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_EnumDevicesByGenTL")]
-        private static extern Int32 MV_CC_EnumDevicesByGenTL(ref MV_GENTL_IF_INFO stIFInfo, ref MV_GENTL_DEV_INFO_LIST pstDevList);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_CreateHandleByGenTL")]
-        private static extern Int32 MV_CC_CreateHandleByGenTL(ref IntPtr handle, ref MV_GENTL_DEV_INFO stDevInfo);
-
-        /************************************************************************/
-        /* XML解析树的生成                                                         */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetGenICamXML")]
-        private static extern Int32 MV_XML_GetGenICamXML(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref UInt32 pnDataLen);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeAccessMode")]
-        private static extern Int32 MV_XML_GetNodeAccessMode(IntPtr handle, String pstrName, ref MV_XML_AccessMode pAccessMode);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeInterfaceType")]
-        private static extern Int32 MV_XML_GetNodeInterfaceType(IntPtr handle, String pstrName, ref MV_XML_InterfaceType pInterfaceType);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetRootNode")]
-        private static extern Int32 MV_XML_GetRootNode(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetChildren")]
-        private static extern Int32 MV_XML_GetChildren(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, IntPtr pstNodesList);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetChildren")]
-        private static extern Int32 MV_XML_GetChildren(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, ref MV_XML_NODES_LIST pstNodesList);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_GetNodeFeature")]
-        private static extern Int32 MV_XML_GetNodeFeature(IntPtr handle, ref MV_XML_NODE_FEATURE pstNode, IntPtr pstFeature);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_UpdateNodeFeature")]
-        private static extern Int32 MV_XML_UpdateNodeFeature(IntPtr handle, MV_XML_InterfaceType enType, IntPtr pstFeature);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_XML_RegisterUpdateCallBack")]
-        private static extern Int32 MV_XML_RegisterUpdateCallBack(IntPtr handle, cbXmlUpdatedelegate cbXmlUpdate, IntPtr pUser);
-
-        /************************************************************************/
-        /* 附加接口                                   */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageEx2")]
-        private static extern Int32 MV_CC_SaveImageEx2(IntPtr handle, ref MV_SAVE_IMAGE_PARAM_EX stSaveParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ConvertPixelType")]
-        private static extern Int32 MV_CC_ConvertPixelType(IntPtr handle, ref MV_PIXEL_CONVERT_PARAM pstCvtParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCvtQuality")]
-        private static extern Int32 MV_CC_SetBayerCvtQuality(IntPtr handle, UInt32 BayerCvtQuality);
-
         [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerGammaValue")]
         private static extern Int32 MV_CC_SetBayerGammaValue(IntPtr handle, Single fBayerGammaValue);
+        #endregion
 
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerGammaParam")]
-        private static extern Int32 MV_CC_SetBayerGammaParam(IntPtr handle, ref MV_CC_GAMMA_PARAM pstGammaParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCCMParam")]
-        private static extern Int32 MV_CC_SetBayerCCMParam(IntPtr handle, ref MV_CC_CCM_PARAM pstCCMParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCCMParamEx")]
-        private static extern Int32 MV_CC_SetBayerCCMParamEx(IntPtr handle, ref MV_CC_CCM_PARAM_EX pstCCMParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SetBayerCLUTParam")]
-        private static extern Int32 MV_CC_SetBayerCLUTParam(IntPtr handle, ref MV_CC_CLUT_PARAM pstCLUTParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ImageContrast")]
-        private static extern Int32 MV_CC_ImageContrast(IntPtr handle, ref MV_CC_CONTRAST_PARAM pstContrastParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ImageSharpen")]
-        private static extern Int32 MV_CC_ImageSharpen(IntPtr handle, ref MV_CC_SHARPEN_PARAM pstSharpenParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_ColorCorrect")]
-        private static extern Int32 MV_CC_ColorCorrect(IntPtr handle, ref MV_CC_COLOR_CORRECT_PARAM pstColorCorrectParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_NoiseEstimate")]
-        private static extern Int32 MV_CC_NoiseEstimate(IntPtr handle, ref MV_CC_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SpatialDenoise")]
-        private static extern Int32 MV_CC_SpatialDenoise(IntPtr handle, ref MV_CC_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LSCCalib")]
-        private static extern Int32 MV_CC_LSCCalib(IntPtr handle, ref MV_CC_LSC_CALIB_PARAM pstLSCCalibParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_LSCCorrect")]
-        private static extern Int32 MV_CC_LSCCorrect(IntPtr handle, ref MV_CC_LSC_CORRECT_PARAM pstLSCCorrectParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_HB_Decode")]
-        private static extern Int32 MV_CC_HB_Decode(IntPtr handle, ref MV_CC_HB_DECODE_PARAM pstDecodeParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetTlProxy")]
-        private static extern IntPtr MV_CC_GetTlProxy(IntPtr handle);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FeatureSave")]
-        private static extern Int32 MV_CC_FeatureSave(IntPtr handle, String pFileName);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FeatureLoad")]
-        private static extern Int32 MV_CC_FeatureLoad(IntPtr handle, String pFileName);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessRead")]
-        private static extern Int32 MV_CC_FileAccessRead(IntPtr handle, ref MV_CC_FILE_ACCESS pstFileAccess);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FileAccessWrite")]
-        private static extern Int32 MV_CC_FileAccessWrite(IntPtr handle, ref MV_CC_FILE_ACCESS pstFileAccess);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetFileAccessProgress")]
-        private static extern Int32 MV_CC_GetFileAccessProgress(IntPtr handle, ref MV_CC_FILE_ACCESS_PROGRESS pstFileAccessProgress);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StartRecord")]
-        private static extern Int32 MV_CC_StartRecord(IntPtr handle, ref MV_CC_RECORD_PARAM pstRecordParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_InputOneFrame")]
-        private static extern Int32 MV_CC_InputOneFrame(IntPtr handle, ref MV_CC_INPUT_FRAME_INFO pstInputFrameInfo);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StopRecord")]
-        private static extern Int32 MV_CC_StopRecord(IntPtr handle);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImageToFile")]
-        private static extern Int32 MV_CC_SaveImageToFile(IntPtr handle, ref MV_SAVE_IMG_TO_FILE_PARAM pstSaveFileParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SavePointCloudData")]
-        private static extern Int32 MV_CC_SavePointCloudData(IntPtr handle, ref MV_SAVE_POINT_CLOUD_PARAM pstPointDataParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RotateImage")]
-        private static extern Int32 MV_CC_RotateImage(IntPtr handle, ref MV_CC_ROTATE_IMAGE_PARAM pstRotateParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_FlipImage")]
-        private static extern Int32 MV_CC_FlipImage(IntPtr handle, ref MV_CC_FLIP_IMAGE_PARAM pstFlipParam);
-
-        /************************************************************************/
-        /* 弃用的接口                                 */
-        /************************************************************************/
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOneFrame")]
-        private static extern Int32 MV_CC_GetOneFrame(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref MV_FRAME_OUT_INFO pFrameInfo);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_GetOneFrameEx")]
-        private static extern Int32 MV_CC_GetOneFrameEx(IntPtr handle, IntPtr pData, UInt32 nDataSize, ref MV_FRAME_OUT_INFO_EX pFrameInfo);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_RegisterImageCallBack")]
-        private static extern Int32 MV_CC_RegisterImageCallBack(IntPtr handle, cbOutputdelegate cbOutput, IntPtr pUser);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_SaveImage")]
-        private static extern Int32 MV_CC_SaveImage(ref MV_SAVE_IMAGE_PARAM stSaveParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_GIGE_ForceIp")]
-        private static extern Int32 MV_GIGE_ForceIp(IntPtr handle, UInt32 nIP);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_BayerNoiseEstimate")]
-        private static extern Int32 MV_CC_BayerNoiseEstimate(IntPtr handle, ref MV_CC_BAYER_NOISE_ESTIMATE_PARAM pstNoiseEstimateParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_BayerSpatialDenoise")]
-        private static extern Int32 MV_CC_BayerSpatialDenoise(IntPtr handle, ref MV_CC_BAYER_SPATIAL_DENOISE_PARAM pstSpatialDenoiseParam);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StartGrabbingEx")]
-        private static extern Int32 MV_CC_StartGrabbingEx(IntPtr handle, UInt32 bNeedStart);
-
-        [DllImport("MvCameraControl.dll", EntryPoint = "MV_CC_StopGrabbingEx")]
-        private static extern Int32 MV_CC_StopGrabbingEx(IntPtr handle, UInt32 bNeedStop);
         #endregion
     }
 }

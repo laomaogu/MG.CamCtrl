@@ -1,11 +1,11 @@
-﻿using MG.CamCtrl;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using MG.CamCtrl;
 
 namespace MG.CamVisual
 {
@@ -46,13 +46,13 @@ namespace MG.CamVisual
                 SNCombox.Items.Clear();
             }
         }
-         
+
         private void Btn_CamInit_Click(object sender, EventArgs e)
         {
             if (isConnected)
             {
                 myCamera.CloseDevice();
-                myCamera = null; 
+                myCamera = null;
             }
             var brand = (CameraBrand)Enum.Parse(typeof(CameraBrand), BrandCombox.SelectedItem.ToString());
 
@@ -70,7 +70,7 @@ namespace MG.CamVisual
             Log($"[{SNCombox.SelectedItem}]相机初始化");
             GetCamconfig();
             isConnected = true;
-            UpdateUI(isConnected, false); 
+            UpdateUI(isConnected, false);
             EnableParm(true);
             DisplayBox.Image = null;
 
@@ -78,7 +78,7 @@ namespace MG.CamVisual
 
 
         private void Btn_Startup_Click(object sender, EventArgs e)
-        { 
+        {
             if (isTriggerModel)
             { //触发模式
 
@@ -112,18 +112,20 @@ namespace MG.CamVisual
             }
 
             //更新UI
-            UpdateUI(isConnected,true); 
+            UpdateUI(isConnected, true);
 
         }
 
         private void Btn_Destroy_Click(object sender, EventArgs e)
         {
+
             myCamera?.CloseDevice();
+
             myCamera = null;
             isConnected = false;
 
             //更新UI
-            UpdateUI(isConnected,false);
+            UpdateUI(isConnected, false);
             EnableParm(false);
             DisplayBox.Image = null;
 
@@ -164,7 +166,7 @@ namespace MG.CamVisual
                 myCamera.GetImageWithSoftTrigger(out Bitmap res, 5000);
                 DisplayBox.Image = res.Clone() as Bitmap;
                 res?.Dispose();
-                
+
             }
         }
 
@@ -185,11 +187,11 @@ namespace MG.CamVisual
         {
             this.Invoke(new Action(() =>
             {
-                if(isConnected)
+                if (isConnected)
                 {
                     DisplayBox.Image = img.Clone() as Bitmap;
                     img?.Dispose();
-                } 
+                }
             }));
         }
 
@@ -199,7 +201,7 @@ namespace MG.CamVisual
 
         private void GetCamconfig()
         {
-            CamConfig camcfg=null;
+            CamConfig camcfg = null;
             if (myCamera != null)
             {
                 myCamera?.GetCamConfig(out camcfg);
@@ -207,7 +209,7 @@ namespace MG.CamVisual
                 Tbox_Gain.Text = camcfg.Gain.ToString();
                 Tbox_TriggerFliter.Text = camcfg.TriggerFilter.ToString();
                 string dav = camcfg.triggerPolarity.ToString();
-                cmbox_TriggerPolarity.SelectedIndex = cmbox_TriggerPolarity.Items.IndexOf( dav);
+                cmbox_TriggerPolarity.SelectedIndex = cmbox_TriggerPolarity.Items.IndexOf(dav);
             }
         }
 
@@ -404,16 +406,16 @@ namespace MG.CamVisual
 
 
             EnableTriggerItem(isTriggerModel);
-            EnableParm(false); 
+            EnableParm(false);
         }
 
-        private void UpdateUI(bool camisConnected,bool isstarted)
+        private void UpdateUI(bool camisConnected, bool isstarted)
         {
             Btn_CamInit.Enabled = !camisConnected;
-            
-            Btn_Startup.Enabled = isstarted? false:isConnected;
+
+            Btn_Startup.Enabled = isstarted ? false : isConnected;
             Btn_Destroy.Enabled = camisConnected;
-           
+
             //EnableTriggerItem(!camisConnected);
         }
 
@@ -443,7 +445,7 @@ namespace MG.CamVisual
             cmbox_TriggerPolarity.Enabled = flag;
             Tbox_TriggerFliter.Enabled = flag;
         }
-         
+
         private void Log(string message)
         {
             this.Invoke(new Action(() =>
@@ -452,7 +454,7 @@ namespace MG.CamVisual
                 {
                     Tbox_Log.Clear();
                 }
-               
+
                 Tbox_Log.AppendText($"\r\n[{DateTime.Now.ToString("HH:mm:ss:ff")}]:{message}");
             }));
 

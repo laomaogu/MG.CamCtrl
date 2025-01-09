@@ -1,5 +1,5 @@
-﻿using MG.CamCtrl.Mode;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MG.CamCtrl.Mode;
 
 namespace MG.CamCtrl
 {
@@ -99,7 +99,7 @@ namespace MG.CamCtrl
                 camereaitem?.CloseDevice();
             }
             CameraList?.Clear();
-        } 
+        }
     }
 
 }

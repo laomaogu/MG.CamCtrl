@@ -1,40 +1,17 @@
-using System;
 using System.Runtime.InteropServices;
-
-//alias Win32 types to Framework types
-//IntPtr
-using HANDLE = System.IntPtr;
-using HDC = System.IntPtr;
-using HBITMAP = System.IntPtr;
-using LPVOID = System.IntPtr;
-using HINSTANCE = System.IntPtr;
-
 //String
-using LPSTR = System.String;
-using LPCSTR = System.String;
-using LPWSTR = System.String;
-using LPCWSTR = System.String;
-using LPTSTR = System.String;
-using LPCTSTR = System.String;
 
 //UInt32
 using DWORD = System.UInt32;
+//alias Win32 types to Framework types
+//IntPtr
+using HDC = System.IntPtr;
+using LPVOID = System.IntPtr;
 using UINT = System.UInt32;
-using ULONG = System.UInt32;
-using COLORREF = System.UInt32;
 
 //Int32
-using INT = System.Int32;
-using LONG = System.Int32;
-using BOOL = System.Int32;
 
 //Other
-using BYTE = System.Byte;
-using SHORT = System.Int16;
-using WORD = System.UInt16;
-using CHAR = System.Char;
-using FLOAT = System.Single;
-using DOUBLE = System.Double;
 
 
 namespace MG.CamCtrl.Cameralibs.DHCmera

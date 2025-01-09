@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Windows.Forms;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Windows.Forms;
 using GxIAPINET;
 
 namespace MG.CamCtrl.Cameralibs.DHCmera
@@ -24,8 +24,8 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
         Bitmap m_bitmapForSave = null;                          ///<bitmap对象,仅供存储图像使用
         const uint PIXEL_FORMATE_BIT = 0x00FF0000;              ///<用于与当前的数据格式进行与运算得到当前的数据位数
         const uint GX_PIXEL_8BIT = 0x00080000;                  ///<8位数据图像格式
-       // IImageProcessConfig m_objCfg = null;                           ///<图像配置参数对象
-                                                                       ///
+        // IImageProcessConfig m_objCfg = null;                           ///<图像配置参数对象
+        ///
         const int COLORONCOLOR = 3;
         const uint DIB_RGB_COLORS = 0;
         const uint SRCCOPY = 0x00CC0020;
@@ -35,11 +35,11 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
         IntPtr m_pHDC = IntPtr.Zero;
 
 
-       
-        public GxBitmap(IGXDevice objIGXDevice )
+
+        public GxBitmap(IGXDevice objIGXDevice)
         {
             m_objIGXDevice = objIGXDevice;
-      
+
             if (null != objIGXDevice)
             {
                 //获得图像原始数据大小、宽度、高度等
@@ -101,7 +101,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
             m_pBitmapInfo = Marshal.AllocHGlobal(2048);
             Marshal.StructureToPtr(m_objBitmapInfo, m_pBitmapInfo, false);
         }
-         
+
         /// <summary>
         /// 存储图像
         /// </summary>
@@ -172,7 +172,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
                         //__ShowImage(m_byMonoBuffer);
                         __UpdateBitmapForSave(m_byColorBuffer);
                     }
-                   
+
                 }
             }
             return GetBmp(objIBaseData);
@@ -182,7 +182,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
         /// </summary>
         /// <param name="objIBaseData">图像数据对象</param>
         /// <param name="strFilePath">显示图像文件名</param>
-        public Bitmap GetBmp(IBaseData objIBaseData )
+        public Bitmap GetBmp(IBaseData objIBaseData)
         {
             GX_VALID_BIT_LIST emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
 
@@ -240,7 +240,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
             }
             catch (Exception ex)
             {
-                
+
                 return null;
             }
 
@@ -320,7 +320,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
             }
         }
 
-      
+
 
         /// <summary>
         /// 判断PixelFormat是否为8位
@@ -353,42 +353,42 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG8:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB8:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG8:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_0_7;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB10:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG10:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_2_9;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_2_9;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB12:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG12:
-                    {
-                        emValidBits = GX_VALID_BIT_LIST.GX_BIT_4_11;
-                        break;
-                    }
+                {
+                    emValidBits = GX_VALID_BIT_LIST.GX_BIT_4_11;
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO14:
-                    {
-                        //暂时没有这样的数据格式待升级
-                        break;
-                    }
+                {
+                    //暂时没有这样的数据格式待升级
+                    break;
+                }
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_MONO16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GR16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_RG16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_GB16:
                 case GX_PIXEL_FORMAT_ENTRY.GX_PIXEL_FORMAT_BAYER_BG16:
-                    {
-                        //暂时没有这样的数据格式待升级
-                        break;
-                    }
+                {
+                    //暂时没有这样的数据格式待升级
+                    break;
+                }
                 default:
                     break;
             }
@@ -442,7 +442,7 @@ namespace MG.CamCtrl.Cameralibs.DHCmera
 
                 return false;
             }
-           
+
             return true;
         }
 

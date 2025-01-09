@@ -60,9 +60,6 @@
     <Reference Include="GxIAPINET">
       <HintPath>Comlib\GxIAPINET.dll</HintPath>
     </Reference>
-    <Reference Include="MvCamCtrl.Net">
-      <HintPath>Comlib\MvCamCtrl.Net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
