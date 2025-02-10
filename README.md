@@ -1,7 +1,7 @@
-# C#  MG.CamCtrl 相机库（开源） 海康(HIK) 大恒(DHeng) 巴斯勒(Basler)
-
+# C# MG.CamCtrl 工业相机库(开源) 海康(HIK) 大恒(DHeng) 巴斯勒(Basler)
+ --- 
 ### 创作不易，请:tw-2b50:支持
-
+ 
 ## 介绍
 
 c# 工业相机库，含海康(HIK)、大恒、巴斯勒(Basler)等相机的常用功能。
