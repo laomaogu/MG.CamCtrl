@@ -109,6 +109,7 @@
             this.BrandCombox.FormattingEnabled = true;
             this.BrandCombox.Items.AddRange(new object[] {
             "HIK",
+            "Basler",
             "DaHeng"});
             this.BrandCombox.Location = new System.Drawing.Point(38, 14);
             this.BrandCombox.Name = "BrandCombox";

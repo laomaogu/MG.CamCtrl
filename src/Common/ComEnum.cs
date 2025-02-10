@@ -25,7 +25,7 @@ namespace MG.CamCtrl
         [Description("索尼相机")]
         SONY,
         /// <summary>
-        /// 巴斯勒相机 未添加
+        /// 巴斯勒相机  
         /// </summary>
         [Description("巴斯勒相机")]
         Basler
