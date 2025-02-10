@@ -1,4 +1,4 @@
-# C#  MG.CamCtrl 相机库（开源） 海康 大恒
+# C#  MG.CamCtrl 相机库（开源） 海康(HIK) 大恒(DHeng) 巴斯勒(Basler)
 
 ### 创作不易，请:tw-2b50:支持
 
