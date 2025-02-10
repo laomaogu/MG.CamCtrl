@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 
 namespace MG.CamCtrl.Mode
@@ -32,39 +33,27 @@ namespace MG.CamCtrl.Mode
 
         public abstract bool InitDevice(string CamSN);
 
-        public bool StartWith_Continue_SetCallback(Action<Bitmap> callbackfunc)
+        public bool StartWith_Continue(Action<Bitmap> callbackfunc)
         {
             SetTriggerMode(TriggerMode.Off);
-            if (callbackfunc != null) ActionGetImage += callbackfunc;
+            if (callbackfunc != null && !ActionGetImage.GetInvocationList().Contains(callbackfunc)) ActionGetImage += callbackfunc;
             return StartGrabbing();
         }
 
 
-        public bool StartWith_SoftTriggerModel()
+        public bool StartWith_HardTriggerModel(TriggerSource hardsource, Action<Bitmap> callbackfunc = null)
+        {
+            if (hardsource == TriggerSource.Software) hardsource = TriggerSource.Line0;
+            SetTriggerMode(TriggerMode.On, hardsource);
+            if (callbackfunc != null && !ActionGetImage.GetInvocationList().Contains(callbackfunc)) ActionGetImage += callbackfunc;
+            return StartGrabbing();
+        }
+
+        public bool StartWith_SoftTriggerModel(Action<Bitmap> callbackfunc = null)
         {
             SetTriggerMode(TriggerMode.On, TriggerSource.Software);
-            return StartGrabbing();
-        }
 
-        public bool StartWith_HardTriggerModel(TriggerSource hardtriggeritem)
-        {
-            if (hardtriggeritem == TriggerSource.Software) hardtriggeritem = TriggerSource.Line0;
-            SetTriggerMode(TriggerMode.On, hardtriggeritem);
-            return StartGrabbing();
-        }
-
-        public bool StartWith_HardTriggerModel_SetCallback(TriggerSource hardtriggeritem, Action<Bitmap> callbackfunc)
-        {
-            if (hardtriggeritem == TriggerSource.Software) hardtriggeritem = TriggerSource.Line0;
-            SetTriggerMode(TriggerMode.On, hardtriggeritem);
-            if (callbackfunc != null) ActionGetImage += callbackfunc;
-            return StartGrabbing();
-        }
-
-        public bool StartWith_SoftTriggerModel_SetCallback(Action<Bitmap> callbackfunc)
-        {
-            SetTriggerMode(TriggerMode.On, TriggerSource.Software);
-            if (callbackfunc != null) ActionGetImage += callbackfunc;
+            if (callbackfunc != null && !ActionGetImage.GetInvocationList().Contains(callbackfunc)) ActionGetImage += callbackfunc;
             return StartGrabbing();
         }
 
@@ -100,6 +89,7 @@ namespace MG.CamCtrl.Mode
 
             if (ResetGetImageSignal.WaitOne(outtime))
             {
+                //Debug.WriteLine("software get img");
                 bitmap = CallBaclImg.Clone() as Bitmap;
                 CallBaclImg?.Dispose();
                 return true;
@@ -225,8 +215,10 @@ namespace MG.CamCtrl.Mode
 
         private void ResetActionImageSignal(Bitmap bitmap)
         {
+            CallBaclImg?.Dispose();
             CallBaclImg = bitmap;
             ResetGetImageSignal.Set();
+            // Debug.WriteLine("reset get img");
         }
         public void Dispose()
         {

@@ -20,12 +20,13 @@ namespace MG.CamCtrl
             switch (brand)
             {
                 case CameraBrand.DaHeng:
-                    camera = new DHCamera();
+                    camera = new DaHengCamera();
                     break;
                 case CameraBrand.HIK:
-                    camera = new HKCamera();
+                    camera = new HIKCamera();
                     break;
                 case CameraBrand.Basler:
+                    camera = new BaslerCamera();
                     break;
                 default: break;
             }
@@ -43,12 +44,13 @@ namespace MG.CamCtrl
             switch (brand)
             {
                 case CameraBrand.DaHeng:
-                    returncamera = new DHCamera();
+                    returncamera = new DaHengCamera();
                     break;
                 case CameraBrand.HIK:
-                    returncamera = new HKCamera();
+                    returncamera = new HIKCamera();
                     break;
                 case CameraBrand.Basler:
+                    returncamera = new BaslerCamera();
                     break;
                 default:
                     break;

@@ -57,6 +57,10 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Basler.Pylon, Version=1.2.0.0, Culture=neutral, PublicKeyToken=e389355f398382ab, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Comlib\Basler.Pylon.dll</HintPath>
+    </Reference>
     <Reference Include="GxIAPINET">
       <HintPath>Comlib\GxIAPINET.dll</HintPath>
     </Reference>
@@ -74,22 +78,18 @@
     <Compile Include="Cameralibs\DHCamera\Util_Bitmap.cs" />
     <Compile Include="Cameralibs\DHCamera\Win32Bitmap.cs" />
     <Compile Include="Cameralibs\HKCamera\MVCameraCtrl.cs" />
-    <Compile Include="Common\Enum\IOLines.cs" />
-    <Compile Include="Common\Enum\LineMode.cs" />
-    <Compile Include="Common\Enum\LineStatus.cs" />
-    <Compile Include="Common\Enum\TriggerSource.cs" />
-    <Compile Include="Common\Enum\TriggerPolarity.cs" />
-    <Compile Include="Common\Model\CamConfig.cs" />
+    <Compile Include="Common\CamConfig.cs" />
+    <Compile Include="Common\ComEnum.cs" />
     <Compile Include="ICamera.cs" />
-    <Compile Include="Common\Enum\CameraBrand.cs" />
-    <Compile Include="Common\Enum\TriggerMode.cs" />
     <Compile Include="Mode\BaseCamera.cs" />
-    <Compile Include="Mode\DHCamera.cs" />
-    <Compile Include="Mode\HKCamera.cs" />
+    <Compile Include="Mode\BaslerCamera.cs" />
+    <Compile Include="Mode\DaHengCamera.cs" />
+    <Compile Include="Mode\HIKCamera.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

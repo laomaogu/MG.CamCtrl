@@ -31,35 +31,22 @@ namespace MG.CamCtrl
         /// </summary>
         /// <param name="callbackfunc"></param>
         /// <returns></returns>
-        bool StartWith_Continue_SetCallback(Action<Bitmap> callbackfunc);
+        bool StartWith_Continue(Action<Bitmap> callbackfunc);
 
         /// <summary>
-        /// 软触发模式 启动相机
-        /// </summary>
-        /// <returns></returns>
-        bool StartWith_SoftTriggerModel();
-
-        /// <summary>
-        /// 硬触发模式 启动相机
-        /// </summary>
-        /// <param name="hardtriggeritem"></param>
-        /// <returns></returns>
-        bool StartWith_HardTriggerModel(TriggerSource hardtriggeritem);
-
-        /// <summary>
-        /// 硬触发 + 回调 启动相机
-        /// </summary>
-        /// <param name="hardtriggeritem"></param>
-        /// <param name="callbackfunc"></param>
-        /// <returns></returns>
-        bool StartWith_HardTriggerModel_SetCallback(TriggerSource hardtriggeritem, Action<Bitmap> callbackfunc);
-
-        /// <summary>
-        /// 软触发 + 回调 启动相机
+        /// 软触发模式 启动相机。callbackfunc不为空。则启动回调
         /// </summary>
         /// <param name="callbackfunc"></param>
         /// <returns></returns>
-        bool StartWith_SoftTriggerModel_SetCallback(Action<Bitmap> callbackfunc);
+        bool StartWith_SoftTriggerModel(Action<Bitmap> callbackfunc = null);
+
+        /// <summary>
+        /// 硬触发模式 启动相机。callbackfunc不为空。则启动回调
+        /// </summary>
+        /// <param name="hardsource"></param>
+        /// <param name="callbackfunc"></param>
+        /// <returns></returns>
+        bool StartWith_HardTriggerModel(TriggerSource hardsource, Action<Bitmap> callbackfunc = null);
 
         /// <summary>
         /// 等待硬触发获取图像

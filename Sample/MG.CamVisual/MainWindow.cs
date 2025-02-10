@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -90,7 +91,8 @@ namespace MG.CamVisual
                 else if (Rbtn_Trigger_SoftCallback.Checked)
                 { //软触发+回调
                     Log($"软触发 + 回调模式 启动");
-                    isConnected = myCamera.StartWith_SoftTriggerModel_SetCallback(CamCallBack);
+                    isConnected = myCamera.StartWith_SoftTriggerModel(CamCallBack);
+
                 }
                 else if (Rbtn_Trigger_Hard.Checked)
                 { //硬触发
@@ -102,13 +104,13 @@ namespace MG.CamVisual
                 { //硬触发 + 回调
                     Log($"硬触发 + 回调模式 启动");
                     TriggerSource linesource = (TriggerSource)Enum.Parse(typeof(TriggerSource), Combobox_HardSource.SelectedItem.ToString());
-                    isConnected = myCamera.StartWith_HardTriggerModel_SetCallback(linesource, CamCallBack);
+                    isConnected = myCamera.StartWith_HardTriggerModel(linesource, CamCallBack);
                 }
             }
             else
             { //连续触发
                 Log($"连续 + 回调模式 启动");
-                isConnected = myCamera.StartWith_Continue_SetCallback(CamCallBack);
+                isConnected = myCamera.StartWith_Continue(CamCallBack);
             }
 
             //更新UI
@@ -118,16 +120,14 @@ namespace MG.CamVisual
 
         private void Btn_Destroy_Click(object sender, EventArgs e)
         {
-
             myCamera?.CloseDevice();
-
             myCamera = null;
             isConnected = false;
 
             //更新UI
             UpdateUI(isConnected, false);
             EnableParm(false);
-            DisplayBox.Image = null;
+            //DisplayBox.Image = null;
 
             Log($"[{SNCombox.SelectedItem}] 相机注销");
         }
@@ -183,18 +183,32 @@ namespace MG.CamVisual
         /// 回调函数
         /// </summary>
         /// <param name="img"></param>
-        private void CamCallBack(Bitmap img)
+        private void CamCallBack(Bitmap data)
         {
-            this.Invoke(new Action(() =>
+            Bitmap buff = data.Clone() as Bitmap;
+            this.BeginInvoke(new Action(() =>
             {
                 if (isConnected)
                 {
-                    DisplayBox.Image = img.Clone() as Bitmap;
-                    img?.Dispose();
+
+                    DisplayBox.Image = buff;
+
+                    // img?.Dispose();
                 }
             }));
+
+
+            if (EnableSave)
+            {
+
+                data.Save(SaveDir);
+
+            }
+
         }
 
+
+        readonly Object obj = new object();
         #endregion
 
         #region 获取参数
@@ -214,6 +228,7 @@ namespace MG.CamVisual
         }
 
         #endregion
+
         #region 参数设置
         private void Tbox_ExpouseTime_TextChanged(object sender, EventArgs e)
         {
@@ -389,13 +404,24 @@ namespace MG.CamVisual
                 IsMove = false;
             }
         }
+
+        private void DisplayBox_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+
+            DisplayBox.Location = new Point(0, 0);
+            DisplayBox.Width = mWidth;
+            DisplayBox.Height = mHeight;
+        }
         #endregion
 
-        #region other
+        #region other  
+        int mWidth { get; set; }
+        int mHeight { get; set; }
         private void InitUI()
         {
             DisplayBox.MouseWheel += DisplayBox_MouseWheel;
-
+            mWidth = DisplayBox.Width;
+            mHeight = DisplayBox.Height;
             Btn_Startup.Enabled = false;
             Btn_Destroy.Enabled = false;
 
@@ -477,6 +503,35 @@ namespace MG.CamVisual
         }
         #endregion
 
+        private void Btn_StopSave(object sender, EventArgs e)
+        {
+            StopSaveImg();
+        }
+
+        private void Btn_StartSave(object sender, EventArgs e)
+        {
+            StartSaveImg();
+        }
+
+
+        ConcurrentQueue<Bitmap> queue_datapool = new ConcurrentQueue<Bitmap>();
+        ConcurrentQueue<string> queue_date = new ConcurrentQueue<string>();
+
+        bool EnableSave = false;
+
+
+        protected string SaveDir { get; set; } = "./ImgRecord/";
+
+        public void StartSaveImg() { EnableSave = true; }
+        public void StartSaveImgWithTiming() { EnableSave = true; }
+        public void StopSaveImg()
+        {
+            EnableSave = false;
+        }
+
+
+
     }
 }
+
 
