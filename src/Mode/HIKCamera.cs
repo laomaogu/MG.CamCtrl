@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using MG.CamCtrl.Cameralibs.HIKCamera;
+using MG.CamCtrl.Cameralibs.HKCamera;
 
 
 namespace MG.CamCtrl.Mode
